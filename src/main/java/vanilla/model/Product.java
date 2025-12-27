@@ -1,4 +1,4 @@
-package spendwatt.model;
+package vanilla.model;
 
 public enum Product {
     SOLAR_PANEL,

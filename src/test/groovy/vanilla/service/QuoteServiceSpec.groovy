@@ -1,13 +1,13 @@
-package spendwatt.service
+package vanilla.service
 
-import spendwatt.model.ProductPrice
-import spendwatt.model.ProductPriceRepository
-import spendwatt.model.QuoteParams
+import vanilla.model.ProductPrice
+import vanilla.model.ProductPriceRepository
+import vanilla.model.QuoteParams
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import static spendwatt.model.Product.BATTERY
-import static spendwatt.model.Product.SOLAR_PANEL
+import static vanilla.model.Product.BATTERY
+import static vanilla.model.Product.SOLAR_PANEL
 
 class QuoteServiceSpec extends Specification {
 

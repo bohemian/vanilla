@@ -1,4 +1,4 @@
-package spendwatt.controller;
+package vanilla.controller;
 
 import org.springframework.http.HttpStatus;
 import static org.springframework.http.HttpStatus.*;

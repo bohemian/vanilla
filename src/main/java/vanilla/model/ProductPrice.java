@@ -1,4 +1,4 @@
-package spendwatt.model;
+package vanilla.model;
 
 import jakarta.persistence.*;
 import lombok.Data;

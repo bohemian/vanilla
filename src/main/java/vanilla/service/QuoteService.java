@@ -1,11 +1,11 @@
-package spendwatt.service;
+package vanilla.service;
 
 import org.springframework.stereotype.Service;
-import spendwatt.model.ProductPrice;
-import spendwatt.model.Product;
-import spendwatt.model.ProductPriceRepository;
-import spendwatt.model.Quote;
-import spendwatt.model.QuoteParams;
+import vanilla.model.ProductPrice;
+import vanilla.model.Product;
+import vanilla.model.ProductPriceRepository;
+import vanilla.model.Quote;
+import vanilla.model.QuoteParams;
 
 import java.util.Map;
 import java.util.Optional;

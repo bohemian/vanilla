@@ -1,4 +1,4 @@
-package spendwatt.model;
+package vanilla.model;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

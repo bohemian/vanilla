@@ -1,4 +1,4 @@
-package spendwatt;
+package vanilla;
 
 import lombok.experimental.UtilityClass;
 
