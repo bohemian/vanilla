@@ -1,21 +1,19 @@
-package spendwatt
+package vanilla
 
 import org.flywaydb.core.Flyway
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.DynamicPropertyRegistry
-import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.spock.Testcontainers
-import spendwatt.model.QuoteParams
-import spendwatt.service.QuoteService
+import vanilla.model.QuoteParams
+import vanilla.service.QuoteService
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import static spendwatt.model.Product.BATTERY
+import static vanilla.model.Product.BATTERY
 
 @SpringBootTest(classes = Application, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
