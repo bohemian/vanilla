@@ -16,3 +16,6 @@ run:
 
 test:
 	$(GRADLEW) test
+
+package:
+	@./scripts/package.sh

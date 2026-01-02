@@ -1,5 +1,7 @@
 token.txt
 
+.DS_Store
+
 # Created by www.gitignore.io
 ### Java ###
 *.class
