@@ -37,20 +37,26 @@ class IntegrationSpec extends Specification {
 
         flyway.migrate()
     }
-//
-//    static {
-//        postgres.start()
-//    }
-
-//    @DynamicPropertySource
-//    static void registerPgProperties(DynamicPropertyRegistry registry) {
-//        registry.add("spring.datasource.url", postgres::getJdbcUrl)
-//        registry.add("spring.datasource.username", postgres::getUsername)
-//        registry.add("spring.datasource.password", postgres::getPassword)
-//    }
 
     @Autowired
     QuoteService quoteService
+
+    @Unroll
+    def "quote(#quantities) should be #expected"() {
+        given:
+        assert quoteService != null: "quoteService not injected"
+        def params = new QuoteParams(quantities)
+
+        when:
+        def actual = quoteService.getQuote(params)
+
+        then:
+        actual.getTotalCents() == expected
+
+        where:
+        quantities     | expected
+        [(BATTERY): 3] | 103701
+    }
 
     @Unroll
     def "quote(#quantities) should be #expected"() {

@@ -24,7 +24,8 @@ public class QuoteService {
         for (Map.Entry<Product, Integer> productQuantity : params.getProductQuantities().entrySet()) {
             Optional<ProductPrice> productPrice = productPriceRepository.findById(productQuantity.getKey());
             if (productPrice.isEmpty()) {
-                throw new IllegalArgumentException("Product " + productQuantity.getKey() + " is not available");
+                var prices = productPriceRepository.findAll();
+                throw new IllegalArgumentException("Product " + productQuantity.getKey() + " is not available. Try one of: " + prices);
             }
             total += productPrice.get().getCostCents() * productQuantity.getValue();
 

@@ -9,11 +9,11 @@ spring:
   flyway:
     enabled: true
     locations: "classpath:db/migration"
-    baseline-on-migrate: true
+    baselineOnMigrate: true
   jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    databasePlatform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: none
+      ddlAuto: none
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
