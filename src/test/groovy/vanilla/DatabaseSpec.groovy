@@ -7,18 +7,16 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.test.context.ActiveProfiles
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.spock.Testcontainers
-import vanilla.model.QuoteParams
-import vanilla.service.QuoteService
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
-
-import static vanilla.model.Product.BATTERY
+import vanilla.dto.QuoteParams
+import vanilla.service.QuoteService
 
 @SpringBootTest(classes = Application, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @Testcontainers
-class IntegrationSpec extends Specification {
+class DatabaseSpec extends Specification {
 
     @Shared
     @ServiceConnection
@@ -54,12 +52,13 @@ class IntegrationSpec extends Specification {
         actual.getTotalCents() == expected
 
         where:
-        quantities     | expected
-        [(BATTERY): 3] | 103701
+        quantities                  | expected
+        ['W1': 3]                   | 369
+        ['W1': 3, 'W2': 4, 'W3': 5] | 123 * 3 + 234 * 4 + 345 * 5
     }
 
     @Unroll
-    def "quote(#quantities) should be #expected"() {
+    def "price history should be saved"() {
         given:
         assert quoteService != null: "quoteService not injected"
         def params = new QuoteParams(quantities)
@@ -71,7 +70,8 @@ class IntegrationSpec extends Specification {
         actual.getTotalCents() == expected
 
         where:
-        quantities     | expected
-        [(BATTERY): 3] | 103701
+        quantities | expected
+        ['W1': 3]  | 369
     }
+
 }

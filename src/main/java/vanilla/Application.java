@@ -6,8 +6,8 @@ import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication
-@EnableJpaRepositories(basePackages = "vanilla.model")
-@EntityScan(basePackages = "vanilla.model")
+@EnableJpaRepositories(basePackages = "vanilla.repository")
+@EntityScan(basePackages = "vanilla.entity")
 public class Application {
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);

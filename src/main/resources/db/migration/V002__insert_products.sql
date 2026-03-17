@@ -1,4 +1,4 @@
-insert into product_price values
-    ('SOLAR_PANEL', 12345),
-    ('SOLAR_HOT_WATER', 23456),
-    ('BATTERY', 34567);
+insert into product(code, name, price_cents) values
+('W1', 'Widget 1', 123),
+('W2', 'Widget 2', 234),
+('W3', 'Widget 3', 345);

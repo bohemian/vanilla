@@ -1,5 +1,4 @@
-package vanilla.model;
-
+package vanilla.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
