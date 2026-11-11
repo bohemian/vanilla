@@ -1,0 +1,3 @@
+artifactory:
+  server_url: https://your-org.jfrog.io/artifactory
+  repository: your-repo-name
