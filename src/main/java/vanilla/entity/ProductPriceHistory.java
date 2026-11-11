@@ -10,8 +10,8 @@ public class ProductPriceHistory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     @ManyToOne()
-    @JoinColumn(name = "forumId")
-    private int productId;
+    @JoinColumn(name = "product_id")
+    private Product product;
     private String name;
     private int priceCents;
 }
