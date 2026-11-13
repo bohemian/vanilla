@@ -70,7 +70,7 @@ jobs:
           echo "::add-mask::$ACCESS_TOKEN"
           echo "ANTHROPIC_API_KEY=$ACCESS_TOKEN" >> $GITHUB_ENV
       - name: Review PR with Claude
-        uses: anthropics/claude-code-action@latest
+        uses: anthropics/claude-code-action@v1
         with:
           model: claude-sonnet-4-6
           prompt: |
