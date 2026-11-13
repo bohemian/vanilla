@@ -9,7 +9,7 @@ plugins {
 
 spotless {
     java {
-        googleJavaFormat()
+        googleJavaFormat('1.25.2')
         targetExclude('build/**')
     }
 }
