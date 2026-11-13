@@ -14,8 +14,10 @@ import vanilla.service.QuoteService;
 public class QuoteController {
   @Autowired private QuoteService quoteService;
 
+  // TODO fix this ugly @Autowired - should use constructor injection
   @PostMapping(value = "/quote", consumes = MediaType.APPLICATION_JSON_VALUE)
   public Quote getQuote(@Valid @RequestBody QuoteParams params) {
+    System.out.println("Getting quote for params: " + params);
     return quoteService.getQuote(params);
   }
 }
