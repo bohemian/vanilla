@@ -20,6 +20,7 @@ public class QuoteService {
   }
 
   public Quote getQuote(QuoteParams params) {
+    // TODO: add discount logic here
     int totalCents = 0;
     List<Product> products =
         productRepository.findAllByCodeIn(params.getProductCodeQuantities().keySet());
