@@ -1,11 +1,14 @@
 SHELL := /bin/bash
 GRADLEW = ./gradlew
 
-.PHONY: all build clean run test
+.PHONY: all build clean run test format
 
 all: build
 
-build:
+format:
+	$(GRADLEW) spotlessApply
+
+build: format
 	$(GRADLEW) build
 
 clean:
