@@ -18,11 +18,11 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up Java 21 (for Spotless)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '25'
+          java-version: '21'
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
@@ -32,6 +32,12 @@ jobs:
 
       - name: Check formatting
         run: ./gradlew spotlessCheck
+
+      - name: Set up Java 25 (for build and test)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
 
       - name: Test
         run: ./gradlew test
