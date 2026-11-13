@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   build:
@@ -37,4 +38,29 @@ jobs:
           name: application-jar
           path: build/libs/*.jar
           retention-days: 14
+
+  anthropic-wif-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch GitHub OIDC token
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const token = await core.getIDToken('https://api.anthropic.com');
+            core.setSecret(token);
+            core.exportVariable('JWT', token);
+      - name: Exchange for an Anthropic access token
+        run: |
+          curl -sS https://api.anthropic.com/v1/oauth/token \
+            -H "content-type: application/json" \
+            --data @- <<JSON | jq 'with_entries(if (.key | test("token$")) then .value = "<redacted>" else . end)'
+          {
+            "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+            "assertion": "$JWT",
+            "federation_rule_id": "fdrl_01Y4r4AB5FceiqNWYjtcqA7V",
+            "organization_id": "5843abe2-f6ed-4a08-98d5-412de5edf9ea",
+            "service_account_id": "svac_019PJwNdQXDky4wDp4zjK438",
+            "workspace_id": "wrkspc_0137VC9CmRPBNhS6aMMB85Jp"
+          }
+          JSON
 
