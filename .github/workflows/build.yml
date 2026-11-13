@@ -33,8 +33,11 @@ jobs:
       - name: Check formatting
         run: ./gradlew spotlessCheck
 
+      - name: Test
+        run: ./gradlew test
+
       - name: Build
-        run: ./gradlew build
+        run: ./gradlew assemble
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
