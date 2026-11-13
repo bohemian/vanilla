@@ -53,11 +53,6 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          prompt: |
-            Review this pull request. Focus on:
-            1. Bugs or logic errors
-            2. Security issues
-            3. Code quality and maintainability
-            4. Java/JPA/Spring best practices where relevant
-            Post a concise structured review comment on the PR.
+          claude_args: "--agent pr-review"
+          prompt: Review this pull request.
 
