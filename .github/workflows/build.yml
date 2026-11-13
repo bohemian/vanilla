@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
   pull-requests: write
 
 jobs:
@@ -45,30 +44,6 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
-      - name: Fetch GitHub OIDC token
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const token = await core.getIDToken('https://api.anthropic.com');
-            core.setSecret(token);
-            core.exportVariable('JWT', token);
-      - name: Exchange for Anthropic access token
-        run: |
-          ACCESS_TOKEN=$(curl -sS https://api.anthropic.com/v1/oauth/token \
-            -H "content-type: application/json" \
-            --data @- <<JSON | jq -r '.access_token'
-          {
-            "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
-            "assertion": "$JWT",
-            "federation_rule_id": "fdrl_01Y4r4AB5FceiqNWYjtcqA7V",
-            "organization_id": "5843abe2-f6ed-4a08-98d5-412de5edf9ea",
-            "service_account_id": "svac_019PJwNdQXDky4wDp4zjK438",
-            "workspace_id": "wrkspc_0137VC9CmRPBNhS6aMMB85Jp"
-          }
-          JSON
-          )
-          echo "::add-mask::$ACCESS_TOKEN"
-          echo "ANTHROPIC_API_KEY=$ACCESS_TOKEN" >> $GITHUB_ENV
       - name: Review PR with Claude
         uses: anthropics/claude-code-action@v1
         with:
@@ -81,5 +56,6 @@ jobs:
             4. Java/JPA/Spring best practices where relevant
             Post a concise structured review comment on the PR.
         env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
