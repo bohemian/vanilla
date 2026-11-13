@@ -8,6 +8,7 @@ on:
 permissions:
   contents: read
   id-token: write
+  pull-requests: write
 
 jobs:
   build:
@@ -39,9 +40,11 @@ jobs:
           path: build/libs/*.jar
           retention-days: 14
 
-  anthropic-wif-test:
+  pr-review:
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
+      - uses: actions/checkout@v4
       - name: Fetch GitHub OIDC token
         uses: actions/github-script@v8
         with:
@@ -49,11 +52,11 @@ jobs:
             const token = await core.getIDToken('https://api.anthropic.com');
             core.setSecret(token);
             core.exportVariable('JWT', token);
-      - name: Exchange for an Anthropic access token
+      - name: Exchange for Anthropic access token
         run: |
-          curl -sS https://api.anthropic.com/v1/oauth/token \
+          ACCESS_TOKEN=$(curl -sS https://api.anthropic.com/v1/oauth/token \
             -H "content-type: application/json" \
-            --data @- <<JSON | jq 'with_entries(if (.key | test("token$")) then .value = "<redacted>" else . end)'
+            --data @- <<JSON | jq -r '.access_token'
           {
             "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
             "assertion": "$JWT",
@@ -63,4 +66,20 @@ jobs:
             "workspace_id": "wrkspc_0137VC9CmRPBNhS6aMMB85Jp"
           }
           JSON
+          )
+          echo "::add-mask::$ACCESS_TOKEN"
+          echo "ANTHROPIC_API_KEY=$ACCESS_TOKEN" >> $GITHUB_ENV
+      - name: Review PR with Claude
+        uses: anthropics/claude-code-action@latest
+        with:
+          model: claude-sonnet-4-6
+          prompt: |
+            Review this pull request. Focus on:
+            1. Bugs or logic errors
+            2. Security issues
+            3. Code quality and maintainability
+            4. Java/JPA/Spring best practices where relevant
+            Post a concise structured review comment on the PR.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
