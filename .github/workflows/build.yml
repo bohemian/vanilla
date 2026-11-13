@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
   pull-requests: write
 
 jobs:
@@ -47,7 +48,8 @@ jobs:
       - name: Review PR with Claude
         uses: anthropics/claude-code-action@v1
         with:
-          model: claude-sonnet-4-6
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
             Review this pull request. Focus on:
             1. Bugs or logic errors
@@ -55,7 +57,4 @@ jobs:
             3. Code quality and maintainability
             4. Java/JPA/Spring best practices where relevant
             Post a concise structured review comment on the PR.
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
