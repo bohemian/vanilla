@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 GRADLEW = ./gradlew
 
-.PHONY: all build clean run test format
+.PHONY: all build clean run test format review
 
 all: build
 
@@ -19,6 +19,9 @@ run:
 
 test:
 	$(GRADLEW) test
+
+review:
+	@git diff main...HEAD | claude "Review this pull request diff. Focus on: bugs or logic errors, security issues, code quality and maintainability, Java/JPA/Spring best practices. Post a concise structured review."
 
 package:
 	@./scripts/package.sh
