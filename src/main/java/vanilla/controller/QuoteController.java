@@ -12,11 +12,10 @@ import vanilla.service.QuoteService;
 
 @RestController
 public class QuoteController {
-    @Autowired
-    private QuoteService quoteService;
+  @Autowired private QuoteService quoteService;
 
-    @PostMapping(value = "/quote", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public Quote getQuote(@Valid @RequestBody QuoteParams params) {
-        return quoteService.getQuote(params);
-    }
+  @PostMapping(value = "/quote", consumes = MediaType.APPLICATION_JSON_VALUE)
+  public Quote getQuote(@Valid @RequestBody QuoteParams params) {
+    return quoteService.getQuote(params);
+  }
 }

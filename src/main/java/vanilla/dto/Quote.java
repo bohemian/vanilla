@@ -6,5 +6,5 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class Quote {
-    private int totalCents;
+  private int totalCents;
 }
