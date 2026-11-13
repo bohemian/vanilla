@@ -6,7 +6,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
   pull-requests: write
 
@@ -56,6 +56,6 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          claude_args: "--agent pr-review"
+          claude_args: '--agent pr-review --allowedTools "Read,Grep,Glob,Edit,Write,Bash(git:*)"'
           prompt: Review this pull request.
 
