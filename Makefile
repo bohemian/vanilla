@@ -21,7 +21,7 @@ test:
 	$(GRADLEW) test
 
 review:
-	@git diff main...HEAD | claude --agent pr-review
+	@./scripts/pr-review.sh
 
 package:
 	@./scripts/package.sh
