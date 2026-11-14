@@ -90,7 +90,10 @@ jobs:
             - Anything that is a matter of style or judgment
             - Anything touching more than ~3 lines
 
-            For inline comments, describe the issue clearly and show the recommended code.
+            For inline comments, describe the issue briefly and format the proposed fix as a GitHub suggestion block so the reviewer can apply it with one click:
+            ```suggestion
+            // replacement code here
+            ```
 
             Review for:
             1. Bugs or logic errors — incorrect behaviour, edge cases, null handling
