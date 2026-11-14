@@ -90,10 +90,11 @@ jobs:
             - Anything that is a matter of style or judgment
             - Anything touching more than ~3 lines
 
-            For inline comments, describe the issue briefly and format the proposed fix as a GitHub suggestion block so the reviewer can apply it with one click:
+            For inline comments, use the mcp__github__create_pending_pull_request_review and mcp__github__add_pull_request_review_comment_to_pending_review tools to post the comment directly on the relevant line. Format the proposed fix as a GitHub suggestion block so the reviewer can apply it with one click:
             ```suggestion
             // replacement code here
             ```
+            Always submit the review when done using mcp__github__submit_pending_pull_request_review.
 
             Review for:
             1. Bugs or logic errors — incorrect behaviour, edge cases, null handling
