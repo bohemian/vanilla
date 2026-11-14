@@ -4,12 +4,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import vanilla.dto.Quote;
 import vanilla.dto.QuoteParams;
 import vanilla.entity.Product;
 import vanilla.repository.ProductRepository;
 
+@Slf4j
 @Service
 public class QuoteService {
 
@@ -21,8 +23,7 @@ public class QuoteService {
 
   public Quote getQuote(QuoteParams params) {
     int totalCents = 0;
-    System.out.println(
-        "Getting quote for " + params.getProductCodeQuantities().size() + " products");
+    log.info("Getting quote for {} products", params.getProductCodeQuantities().size());
     List<Product> products =
         productRepository.findAllByCodeIn(params.getProductCodeQuantities().keySet());
     if (products.size() != params.getProductCodeQuantities().size()) {
