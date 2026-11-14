@@ -2,6 +2,7 @@ package vanilla.service;
 
 import java.util.List;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import vanilla.entity.Product;
 import vanilla.repository.ProductRepository;
 
