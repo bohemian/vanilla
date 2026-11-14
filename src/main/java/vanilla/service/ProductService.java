@@ -9,8 +9,13 @@ import vanilla.repository.ProductRepository;
 @Service
 public class ProductService {
 
-  @Autowired private ProductRepository productRepository;
+  private final ProductRepository productRepository;
 
+  public ProductService(ProductRepository productRepository) {
+    this.productRepository = productRepository;
+  }
+
+  @Transactional(readOnly = true)
   public List<Product> getAllProducts() {
     return productRepository.findAll();
   }
