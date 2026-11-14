@@ -21,7 +21,7 @@ public class QuoteService {
 
   public Quote getQuote(QuoteParams params) {
     int totalCents = 0;
-    System.out.println("calculating quote");
+    System.out.println("Getting quote for " + params.getProductCodeQuantities().size() + " products");
     List<Product> products =
         productRepository.findAllByCodeIn(params.getProductCodeQuantities().keySet());
     if (products.size() != params.getProductCodeQuantities().size()) {
