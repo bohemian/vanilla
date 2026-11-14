@@ -34,10 +34,11 @@ jobs:
 
       - name: Apply formatting
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin ${{ github.head_ref || github.ref_name }}
           ./gradlew spotlessApply
           if ! git diff --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
             git add -A
             git commit -m "Apply Spotless formatting"
             git push
