@@ -20,8 +20,8 @@ public class QuoteService {
   }
 
   public Quote getQuote(QuoteParams params) {
-    // TODO: add discount logic here
     int totalCents = 0;
+    System.out.println("calculating quote");
     List<Product> products =
         productRepository.findAllByCodeIn(params.getProductCodeQuantities().keySet());
     if (products.size() != params.getProductCodeQuantities().size()) {
