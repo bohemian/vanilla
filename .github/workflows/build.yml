@@ -77,9 +77,20 @@ jobs:
           prompt: |
             You are a code reviewer for a Java Spring Boot project. Review the pull request and address issues as follows:
 
-            For each issue found:
-            - If it is a clear, self-contained fix (e.g. System.out.println, typo, simple bug): apply the fix directly using Edit or Write, then commit it to the branch with git commit and git push
-            - If it requires broader design discussion or the intent is unclear: post an inline comment describing the issue and the recommended approach
+            For each issue found, choose ONE of:
+
+            AUTO-COMMIT the fix (Edit/Write + git commit + git push) only when ALL of these are true:
+            - The fix is a single, unambiguous change (e.g. remove System.out.println, fix a typo, correct an obviously wrong value)
+            - It touches only the lines already changed in this PR
+            - No reasonable developer would disagree with the change
+
+            POST AN INLINE COMMENT for everything else, including:
+            - Refactoring suggestions (e.g. field injection → constructor injection, restructuring logic)
+            - Changes outside the lines touched by this PR
+            - Anything that is a matter of style or judgment
+            - Anything touching more than ~3 lines
+
+            For inline comments, describe the issue clearly and show the recommended code.
 
             Review for:
             1. Bugs or logic errors — incorrect behaviour, edge cases, null handling
