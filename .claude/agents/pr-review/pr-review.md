@@ -21,20 +21,16 @@ Agents to invoke:
 
 ## Step 2 — Post a GitHub review
 
-Create a pending review with mcp__github__create_pending_pull_request_review, then for each finding:
+Post each finding as a **pull request review comment inline on the diff** (not a general PR comment). Inline review comments support GitHub suggestion blocks which give the reviewer a one-click "Apply suggestion" button.
 
 **From spelling-checker, bug-detector, security-reviewer, or java-best-practices with scope "suggestion":**
-Post an inline comment using mcp__github__add_pull_request_review_comment_to_pending_review with:
-- `path`: the `file` value
-- `line`: the `line` value (this positions the comment on the correct diff line)
-- `body`: a GitHub suggestion block containing the full corrected line:
+Post an inline review comment on `file` at `line` with a suggestion block as the body:
 ```suggestion
-corrected line of code here
+[full corrected line]
 ```
+The suggestion block must contain the entire corrected line, not just the changed portion.
 
 **From java-best-practices with scope "future-pr":**
-Post an inline comment on the relevant line: "Consider addressing in a future PR: [description and recommendation]". No suggestion block.
+Post an inline review comment on `file` at `line` with body: "Consider addressing in a future PR: [description and recommendation]". No suggestion block.
 
-Submit with mcp__github__submit_pending_pull_request_review.
-
-If no findings from any agent, post a single summary comment: "No issues found."
+If no findings from any agent, post a general PR comment: "No issues found."
