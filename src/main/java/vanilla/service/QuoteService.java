@@ -21,6 +21,7 @@ public class QuoteService {
     this.productRepository = productRepository;
   }
 
+  // Calculates the total price for a quote request
   public Quote getQuote(QuoteParams params) {
     int totalCents = 0;
     log.info("Getting quote for {} products", params.getProductCodeQuantities().size());
