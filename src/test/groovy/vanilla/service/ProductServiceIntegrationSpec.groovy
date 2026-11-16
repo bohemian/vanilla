@@ -4,6 +4,7 @@ import org.flywaydb.core.Flyway
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.spock.Testcontainers
@@ -41,6 +42,9 @@ class ProductServiceIntegrationSpec extends Specification {
     @Autowired
     ProductRepository productRepository
 
+    @Autowired
+    JdbcTemplate jdbcTemplate
+
     def "getActiveProductCodes returns all seeded products which all have positive prices"() {
         when:
         def result = productService.getActiveProductCodes()
@@ -51,7 +55,7 @@ class ProductServiceIntegrationSpec extends Specification {
 
     def "getActiveProductCodes excludes products with zero price"() {
         given:
-        def freeProduct = productRepository.save(new Product(code: 'FREE', name: 'Free Widget', priceCents: 0))
+        productRepository.save(new Product(code: 'FREE', name: 'Free Widget', priceCents: 0))
 
         when:
         def result = productService.getActiveProductCodes()
@@ -60,6 +64,8 @@ class ProductServiceIntegrationSpec extends Specification {
         !result.contains('FREE')
 
         cleanup:
-        productRepository.delete(freeProduct)
+        // Use native SQL to avoid Hibernate loading ProductPriceHistory (entity has schema mismatch on 'name' column)
+        jdbcTemplate.update("DELETE FROM product_price_history WHERE product_id = (SELECT id FROM product WHERE code = 'FREE')")
+        jdbcTemplate.update("DELETE FROM product WHERE code = 'FREE'")
     }
 }
