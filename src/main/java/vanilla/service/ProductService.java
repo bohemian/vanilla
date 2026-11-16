@@ -1,6 +1,7 @@
 package vanilla.service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vanilla.entity.Product;
@@ -18,5 +19,13 @@ public class ProductService {
   @Transactional(readOnly = true)
   public List<Product> getAllProducts() {
     return productRepository.findAll();
+  }
+
+  @Transactional(readOnly = true)
+  public List<String> getActiveProductCodes() {
+    return productRepository.findAll().stream()
+        .filter(p -> p.getPriceCents() > 0)
+        .map(Product::getCode)
+        .collect(Collectors.toList());
   }
 }
