@@ -14,23 +14,26 @@ First, read `.claude/agents/pr-review/CLAUDE.md` to load the base contract.
 Invoke all four agents simultaneously using the Task tool, passing the base contract to each along with their specific instructions.
 
 Agents to invoke:
-- **spelling-checker** — finds typos in comments and string literals. Output fields: `file`, `line_content`, `wrong`, `correct`
-- **bug-detector** — finds potential bugs and logic errors. Output fields: `file`, `line_content`, `issue`, `fix`
-- **java-best-practices** — finds Java/Spring anti-pattern violations. Output fields: `file`, `line_content`, `issue`, `scope` (suggestion|future-pr), `recommendation`
-- **security-reviewer** — finds security issues. Output fields: `file`, `line_content`, `issue`, `severity` (high|medium|low), `fix`
+- **spelling-checker** — finds typos in comments and string literals. Output fields: `file`, `line`, `line_content`, `wrong`, `correct`
+- **bug-detector** — finds potential bugs and logic errors. Output fields: `file`, `line`, `line_content`, `issue`, `fix`
+- **java-best-practices** — finds Java/Spring anti-pattern violations. Output fields: `file`, `line`, `line_content`, `issue`, `scope` (suggestion|future-pr), `recommendation`
+- **security-reviewer** — finds security issues. Output fields: `file`, `line`, `line_content`, `issue`, `severity` (high|medium|low), `fix`
 
 ## Step 2 — Post a GitHub review
 
 Create a pending review with mcp__github__create_pending_pull_request_review, then for each finding:
 
 **From spelling-checker, bug-detector, security-reviewer, or java-best-practices with scope "suggestion":**
-Post an inline comment on the relevant line using mcp__github__add_pull_request_review_comment_to_pending_review with a GitHub suggestion block:
+Post an inline comment using mcp__github__add_pull_request_review_comment_to_pending_review with:
+- `path`: the `file` value
+- `line`: the `line` value (this positions the comment on the correct diff line)
+- `body`: a GitHub suggestion block containing the full corrected line:
 ```suggestion
 corrected line of code here
 ```
 
 **From java-best-practices with scope "future-pr":**
-Post an inline comment: "Consider addressing in a future PR: [description and recommendation]". No suggestion block.
+Post an inline comment on the relevant line: "Consider addressing in a future PR: [description and recommendation]". No suggestion block.
 
 Submit with mcp__github__submit_pending_pull_request_review.
 
