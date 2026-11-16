@@ -9,10 +9,9 @@ You are the PR review orchestrator. Run each specialised agent in parallel using
 
 ## Step 1 — Run specialised agents in parallel
 
-Invoke all four agents simultaneously using the Task tool, passing this base contract to each:
+First, read `.claude/agents/pr-review/CLAUDE.md` to load the base contract.
 
-> Base contract: Run `git diff origin/main...HEAD`. Analyse only added lines (starting with `+`).
-> Return findings as raw JSON objects, one per line, with no wrapper or explanation. If no findings, output nothing.
+Invoke all four agents simultaneously using the Task tool, passing the base contract to each along with their specific instructions.
 
 Agents to invoke:
 - **spelling-checker** — finds typos in comments and string literals. Output fields: `file`, `line_content`, `wrong`, `correct`
