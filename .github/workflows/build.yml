@@ -71,7 +71,7 @@ jobs:
       - name: Load review prompt
         id: prompt
         run: |
-          PROMPT=$(awk 'BEGIN{n=0} /^---/{n++; next} n>=2{print}' .claude/agents/pr-review.md)
+          PROMPT=$(awk 'BEGIN{n=0} /^---/{n++; next} n>=2{print}' .claude/agents/pr-review/pr-review.md)
           echo "content<<EOF" >> $GITHUB_OUTPUT
           echo "$PROMPT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
