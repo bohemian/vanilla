@@ -11,7 +11,11 @@ import vanilla.repository.ProductRepository;
 @RestController
 public class ProductController {
 
-  @Autowired private ProductRepository productRepository;
+  private final ProductRepository productRepository;
+
+  public ProductController(ProductRepository productRepository) {
+    this.productRepository = productRepository;
+  }
 
   @GetMapping("/products")
   public List<String> getProductCodes() {
