@@ -9,7 +9,7 @@ class ProductServiceSpec extends Specification {
     def productRepository = Mock(ProductRepository)
     def service = new ProductService(productRepository)
 
-    def "getActiveProductCodes returns codes for products with non-negative price"() {
+    def "getActiveProductCodes returns codes for products with positive price"() {
         given:
         productRepository.findAll() >> [
             new Product(code: 'A', priceCents: 100),
@@ -21,13 +21,13 @@ class ProductServiceSpec extends Specification {
         def result = service.getActiveProductCodes()
 
         then:
-        result == ['A', 'B', 'C']
+        result == ['A', 'C']
     }
 
-    def "getActiveProductCodes excludes products with negative price"() {
+    def "getActiveProductCodes returns empty list when no products have positive price"() {
         given:
         productRepository.findAll() >> [
-            new Product(code: 'A', priceCents: -1),
+            new Product(code: 'A', priceCents: 0),
         ]
 
         when:
