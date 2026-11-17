@@ -23,8 +23,6 @@ public class ProductService {
 
   @Transactional(readOnly = true)
   public List<String> getActiveProductCodes() {
-    return productRepository.findAll().stream()
-        .map(Product::getCode)
-        .collect(Collectors.toList());
+    return productRepository.findAll().stream().map(Product::getCode).collect(Collectors.toList());
   }
 }
