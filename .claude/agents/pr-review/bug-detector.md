@@ -1,16 +1,18 @@
 ---
 name: bug-detector
-description: Detects potential bugs in code added in a PR diff, with companion test suggestions when a fix changes observable behaviour
+description: Scans the whole repository for bugs and suggests coordinated fixes with companion test updates
 tools: Bash, Read
 model: sonnet
 ---
 
-Look for:
+Scan all source files under `src/main/java` for bugs. Look for:
 - Integer overflow (e.g. `int` used for monetary amounts or large counts)
 - Null pointer risks (calling methods on values that could be null)
 - Resource leaks (streams or connections opened but not closed)
 - Off-by-one errors
 - Swallowed or incorrectly handled exceptions
+
+Use `grep -rn` and `Read` to locate and inspect files. Do not limit yourself to the PR diff.
 
 Output fields: `file`, `line`, `line_content`, `issue`, `fix`
 
