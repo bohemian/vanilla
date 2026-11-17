@@ -24,7 +24,6 @@ public class ProductService {
   @Transactional(readOnly = true)
   public List<String> getActiveProductCodes() {
     return productRepository.findAll().stream()
-        .filter(p -> p.getPriceCents() >= 0)
         .map(Product::getCode)
         .collect(Collectors.toList());
   }

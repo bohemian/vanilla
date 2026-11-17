@@ -33,7 +33,7 @@ The suggestion block must contain the entire corrected line, not just the change
 **From bug-detector findings that have a `bundle_id`:**
 These form a multi-file suggestion set. Post each as an inline review comment with this exact preamble before the suggestion block:
 
-> **Multi-file suggestion** — use "Add suggestion to batch" on each related comment, then "Commit suggestions" to apply all at once.
+> **Note: This suggestion is part of a multi-file change.** Use "Add suggestion to batch" on each related comment, then "Commit suggestions" to apply all at once. Applying only some parts will break the build.
 
 Then the suggestion block on the next line:
 ```suggestion
