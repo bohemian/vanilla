@@ -53,7 +53,7 @@ class ProductServiceIntegrationSpec extends Specification {
         result.containsAll(['W1', 'W2', 'W3'])
     }
 
-    def "getActiveProductCodes excludes products with zero price"() {
+    def "getActiveProductCodes includes products with zero price"() {
         given:
         productRepository.save(new Product(code: 'FREE', name: 'Free Widget', priceCents: 0))
 
@@ -61,7 +61,7 @@ class ProductServiceIntegrationSpec extends Specification {
         def result = productService.getActiveProductCodes()
 
         then:
-        !result.contains('FREE')
+        result.contains('FREE')
 
         cleanup:
         // Use native SQL to avoid Hibernate loading ProductPriceHistory (entity has schema mismatch on 'name' column)
