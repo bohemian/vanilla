@@ -5,6 +5,7 @@ plugins {
     id 'org.springframework.boot' version '4.0.1'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'com.diffplug.spotless' version '7.0.3'
+    id 'com.github.spotbugs' version '6.1.11'
 }
 
 spotless {
@@ -13,6 +14,23 @@ spotless {
         targetExclude('build/**')
     }
 }
+
+spotbugs {
+    toolVersion = '4.9.3'
+    ignoreFailures = true  // findings are advisory; they don't break the build
+    effort = 'max'
+    reportLevel = 'low'
+    excludeFilter = file('config/spotbugs-exclude.xml')
+}
+
+spotbugsMain {
+    reports {
+        xml { required = true }
+        html { required = false }
+    }
+}
+
+spotbugsTest { enabled = false }
 
 group = 'com.spendwatt'
 version = '1.0.0'

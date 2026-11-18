@@ -28,7 +28,9 @@ echo "🔍 Scanning commit for bugs..."
 
 SYSTEM=$(awk 'BEGIN{n=0} /^---/{n++; next} n>=2{print}' .claude/agents/qc/commit-bug-detector.md)
 FINDINGS=$(git show HEAD --no-color \
-  | claude -p --model haiku --system-prompt "$SYSTEM" 2>/dev/null \
+  | claude -p --model haiku \
+    --allowedTools "Bash(./gradlew:spotbugsMain),Bash(cat:*)" \
+    --system-prompt "$SYSTEM" 2>/dev/null \
   | grep -v '^\s*```' \
   || true)
 
