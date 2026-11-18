@@ -23,7 +23,7 @@ public class QuoteService {
 
   // Calculates the total price for a quote request
   public Quote getQuote(QuoteParams params) {
-    int totalCents = 0;
+    long totalCents = 0;
     log.info("Getting quote for {} products", params.getProductCodeQuantities().size());
     List<Product> products =
         productRepository.findAllByCodeIn(params.getProductCodeQuantities().keySet());
@@ -41,7 +41,7 @@ public class QuoteService {
     for (Map.Entry<String, Integer> productCodeQuantity :
         params.getProductCodeQuantities().entrySet()) {
       var product = codeProductMap.get(productCodeQuantity.getKey());
-      totalCents += product.getPriceCents() * productCodeQuantity.getValue();
+      totalCents += (long) product.getPriceCents() * productCodeQuantity.getValue();
     }
 
     return new Quote(totalCents);

@@ -28,8 +28,9 @@ class QuoteServiceComponentSpec extends Specification {
         actual.getTotalCents() == expected
 
         where:
-        quantities         | expected
-        ['W1': 3, 'W2': 4] | 1111 * 3 + 2222 * 4
+        quantities              | expected
+        ['W1': 3, 'W2': 4]      | 1111 * 3 + 2222 * 4
+        ['W1': 2000000, 'W2': 1] | 1111L * 2000000 + 2222L * 1  // overflows int
     }
 
 }

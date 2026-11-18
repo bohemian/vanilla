@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# Bug scan on every commit. Bypass with: git commit --no-verify
+# Skip programmatically by setting SKIP_BUG_SCAN=1 (used internally to prevent re-entry on amend).
+#
+# CLAUDE_SESSION=1  — set by Claude Code when committing on your behalf.
+#   In this mode the hook prints raw JSON findings to stdout and exits;
+#   the interactive fix dialog is handled inside the Claude Code session.
+
+set -euo pipefail
+
+[[ "${SKIP_BUG_SCAN:-}" == "1" ]] && exit 0
+
+# Skip merge commits — no single change to review
+git rev-parse -q --verify MERGE_HEAD > /dev/null 2>&1 && exit 0
+
+# Find the highest nvm node version that has a claude binary and prepend its bin
+# dir to PATH. Subshells may otherwise resolve an older (broken) claude binary.
+# Sort by numeric version components to avoid BSD sort's v-prefix issues.
+CLAUDE_BIN=$(find "$HOME/.nvm/versions/node" -maxdepth 3 -name "claude" 2>/dev/null \
+  | awk -F/ '{n=$(NF-2); gsub(/^v/,"",n); print n, $0}' \
+  | sort -t. -k1,1n -k2,2n -k3,3n \
+  | tail -1 | cut -d' ' -f2-)
+[ -n "$CLAUDE_BIN" ] && export PATH="$(dirname "$CLAUDE_BIN"):$PATH"
+
+if ! command -v claude &>/dev/null; then
+  echo "⚠️  claude not found — skipping bug scan (run 'make hooks' to verify setup)"
+  exit 0
+fi
+
+echo ""
+echo "🔍 Scanning commit for bugs..."
+
+SYSTEM=$(awk 'BEGIN{n=0} /^---/{n++; next} n>=2{print}' .claude/agents/qc/commit-bug-detector.md)
+# Restrict diff to Java/Groovy source files so the LLM isn't distracted by XML,
+# config, or markdown changes — the agent still sees +++ headers to identify
+# changed files for SpotBugs filtering.
+FINDINGS=$(git show HEAD --no-color -- '*.java' '*.groovy' \
+  | claude -p --model haiku \
+    --allowedTools "Bash(./gradlew:spotbugsMain),Bash(cat:*)" \
+    --system-prompt "$SYSTEM" 2>/dev/null \
+  | grep -v '^\s*```' \
+  | grep -v '^[^{]' \
+  || true)
+
+if [[ -z "$FINDINGS" ]]; then
+  echo "✅ No bugs detected."
+  exit 0
+fi
+
+echo ""
+echo "⚠️  Potential bugs found:"
+if command -v jq &>/dev/null; then
+  echo "$FINDINGS" | jq -r '"  \(.file):\(.line) — \(.issue)"' 2>/dev/null || echo "$FINDINGS"
+else
+  echo "$FINDINGS"
+fi
+
+# When running inside a Claude Code session, emit raw JSON and exit —
+# the session handles the fix dialog interactively.
+if [[ "${CLAUDE_SESSION:-}" == "1" ]]; then
+  echo ""
+  echo "BUG_FINDINGS_JSON_BEGIN"
+  echo "$FINDINGS"
+  echo "BUG_FINDINGS_JSON_END"
+  exit 0
+fi
+
+# --- Terminal (non-Claude-Code) interactive flow ---
+
+echo ""
+printf "Apply fixes interactively? [y/N] "
+read -r response < /dev/tty
+[[ "$response" != "y" && "$response" != "Y" ]] && exit 0
+
+# Pass findings to an interactive claude session for applying fixes
+TMPFILE=$(mktemp /tmp/bug-findings-XXXXXX.json)
+trap 'rm -f "$TMPFILE"' EXIT
+printf '%s\n' "$FINDINGS" > "$TMPFILE"
+
+claude "The following bugs were found in the latest commit. Use the Edit tool to apply the fix for each one:
+
+$(cat "$TMPFILE")"
+
+# Amend the commit if any files were changed
+if git diff HEAD --quiet 2>/dev/null; then
+  echo "No changes were made."
+  exit 0
+fi
+
+echo ""
+printf "Amend commit with these fixes? [Y/n] "
+read -r amend < /dev/tty
+if [[ "$amend" != "n" && "$amend" != "N" ]]; then
+  git add -A
+  SKIP_BUG_SCAN=1 git commit --amend --no-edit
+  echo "✅ Commit amended with fixes."
+fi

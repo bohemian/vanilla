@@ -1,5 +1,6 @@
 package vanilla.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.util.List;
 import lombok.Data;
@@ -15,6 +16,7 @@ public class Product {
   private String name;
   private int priceCents;
 
+  @JsonIgnore
   @OneToMany
   @JoinColumn(name = "product_id")
   private List<ProductPriceHistory> employees;

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Lombok-generated equals/hashCode trigger this spuriously -->
+    <Match>
+        <Bug pattern="EQ_UNUSUAL"/>
+    </Match>
+    <!-- Spring proxies require public no-arg constructors; SpotBugs doesn't know about them -->
+    <Match>
+        <Bug pattern="UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD"/>
+    </Match>
+</FindBugsFilter>
