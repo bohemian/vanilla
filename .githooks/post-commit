@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Bug scan on every commit. Bypass with: git commit --no-verify
 # Skip programmatically by setting SKIP_BUG_SCAN=1 (used internally to prevent re-entry on amend).
+#
+# CLAUDE_SESSION=1  — set by Claude Code when committing on your behalf.
+#   In this mode the hook prints raw JSON findings to stdout and exits;
+#   the interactive fix dialog is handled inside the Claude Code session.
 
 set -euo pipefail
 
@@ -50,6 +54,18 @@ if command -v jq &>/dev/null; then
 else
   echo "$FINDINGS"
 fi
+
+# When running inside a Claude Code session, emit raw JSON and exit —
+# the session handles the fix dialog interactively.
+if [[ "${CLAUDE_SESSION:-}" == "1" ]]; then
+  echo ""
+  echo "BUG_FINDINGS_JSON_BEGIN"
+  echo "$FINDINGS"
+  echo "BUG_FINDINGS_JSON_END"
+  exit 0
+fi
+
+# --- Terminal (non-Claude-Code) interactive flow ---
 
 echo ""
 printf "Apply fixes interactively? [y/N] "
