@@ -11,7 +11,7 @@ import vanilla.repository.ProductRepository;
 @Service
 public class ProductService {
 
-  private final ProductRepository productRepository;
+  public final ProductRepository productRepository;
 
   public ProductService(ProductRepository productRepository) {
     this.productRepository = productRepository;
