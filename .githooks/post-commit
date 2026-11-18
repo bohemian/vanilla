@@ -9,14 +9,14 @@ set -euo pipefail
 # Skip merge commits — no single change to review
 git rev-parse -q --verify MERGE_HEAD > /dev/null 2>&1 && exit 0
 
-# Ensure claude is available (it lives in nvm's bin, which git hooks don't see by default)
-if ! command -v claude &>/dev/null; then
-  export NVM_DIR="$HOME/.nvm"
-  # shellcheck source=/dev/null
-  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" --no-use 2>/dev/null
-  NVM_BIN=$(find "$HOME/.nvm/versions/node" -maxdepth 2 -name "bin" -type d 2>/dev/null | sort -V | tail -1)
-  [ -n "$NVM_BIN" ] && export PATH="$NVM_BIN:$PATH"
-fi
+# Find the highest nvm node version that has a claude binary and prepend its bin
+# dir to PATH. Subshells may otherwise resolve an older (broken) claude binary.
+# Sort by numeric version components to avoid BSD sort's v-prefix issues.
+CLAUDE_BIN=$(find "$HOME/.nvm/versions/node" -maxdepth 3 -name "claude" 2>/dev/null \
+  | awk -F/ '{n=$(NF-2); gsub(/^v/,"",n); print n, $0}' \
+  | sort -t. -k1,1n -k2,2n -k3,3n \
+  | tail -1 | cut -d' ' -f2-)
+[ -n "$CLAUDE_BIN" ] && export PATH="$(dirname "$CLAUDE_BIN"):$PATH"
 
 if ! command -v claude &>/dev/null; then
   echo "⚠️  claude not found — skipping bug scan (run 'make hooks' to verify setup)"
@@ -26,10 +26,11 @@ fi
 echo ""
 echo "🔍 Scanning commit for bugs..."
 
-# Capture the diff here and pass it as text — no tools needed, pure LLM inference, fast
-DIFF=$(git show HEAD --no-color)
 SYSTEM=$(awk 'BEGIN{n=0} /^---/{n++; next} n>=2{print}' .claude/agents/qc/commit-bug-detector.md)
-FINDINGS=$(claude -p --tools "" --system-prompt "$SYSTEM" "$DIFF" 2>/dev/null || true)
+FINDINGS=$(git show HEAD --no-color \
+  | claude -p --model haiku --system-prompt "$SYSTEM" 2>/dev/null \
+  | grep -v '^\s*```' \
+  || true)
 
 if [[ -z "$FINDINGS" ]]; then
   echo "✅ No bugs detected."
