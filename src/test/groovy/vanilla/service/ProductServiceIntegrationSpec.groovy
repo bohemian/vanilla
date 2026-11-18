@@ -1,40 +1,12 @@
 package vanilla.service
 
-import org.flywaydb.core.Flyway
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.jdbc.core.JdbcTemplate
-import org.springframework.test.context.ActiveProfiles
-import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.spock.Testcontainers
-import spock.lang.Shared
-import spock.lang.Specification
-import vanilla.Application
+import vanilla.AbstractIntegrationSpec
 import vanilla.entity.Product
 import vanilla.repository.ProductRepository
 
-@SpringBootTest(classes = Application, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("test")
-@Testcontainers
-class ProductServiceIntegrationSpec extends Specification {
-
-    @Shared
-    @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("testuser")
-            .withPassword("testpass")
-
-    def setupSpec() {
-        postgres.start()
-
-        Flyway.configure()
-                .dataSource(postgres.jdbcUrl, postgres.username, postgres.password)
-                .locations("classpath:db/migration")
-                .load()
-                .migrate()
-    }
+class ProductServiceIntegrationSpec extends AbstractIntegrationSpec {
 
     @Autowired
     ProductService productService
@@ -45,27 +17,27 @@ class ProductServiceIntegrationSpec extends Specification {
     @Autowired
     JdbcTemplate jdbcTemplate
 
-    def "getActiveProductCodes returns all seeded products which all have positive prices"() {
+    def "getActiveProductCodes returns all seeded products when maxPriceCents covers all prices"() {
         when:
-        def result = productService.getActiveProductCodes()
+        def result = productService.getActiveProductCodes(10000)
 
         then:
         result.containsAll(['W1', 'W2', 'W3'])
     }
 
-    def "getActiveProductCodes excludes products with zero price"() {
+    def "getActiveProductCodes excludes products above max price"() {
         given:
-        productRepository.save(new Product(code: 'FREE', name: 'Free Widget', priceCents: 0))
+        productRepository.save(new Product(code: 'EXPENSIVE', name: 'Expensive Widget', priceCents: 99999))
 
         when:
-        def result = productService.getActiveProductCodes()
+        def result = productService.getActiveProductCodes(500)
 
         then:
-        !result.contains('FREE')
+        !result.contains('EXPENSIVE')
 
         cleanup:
         // Use native SQL to avoid Hibernate loading ProductPriceHistory (entity has schema mismatch on 'name' column)
-        jdbcTemplate.update("DELETE FROM product_price_history WHERE product_id = (SELECT id FROM product WHERE code = 'FREE')")
-        jdbcTemplate.update("DELETE FROM product WHERE code = 'FREE'")
+        jdbcTemplate.update("DELETE FROM product_price_history WHERE product_id = (SELECT id FROM product WHERE code = 'EXPENSIVE')")
+        jdbcTemplate.update("DELETE FROM product WHERE code = 'EXPENSIVE'")
     }
 }
