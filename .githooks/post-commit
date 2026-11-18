@@ -27,11 +27,15 @@ echo ""
 echo "🔍 Scanning commit for bugs..."
 
 SYSTEM=$(awk 'BEGIN{n=0} /^---/{n++; next} n>=2{print}' .claude/agents/qc/commit-bug-detector.md)
-FINDINGS=$(git show HEAD --no-color \
+# Restrict diff to Java/Groovy source files so the LLM isn't distracted by XML,
+# config, or markdown changes — the agent still sees +++ headers to identify
+# changed files for SpotBugs filtering.
+FINDINGS=$(git show HEAD --no-color -- '*.java' '*.groovy' \
   | claude -p --model haiku \
     --allowedTools "Bash(./gradlew:spotbugsMain),Bash(cat:*)" \
     --system-prompt "$SYSTEM" 2>/dev/null \
   | grep -v '^\s*```' \
+  | grep -v '^[^{]' \
   || true)
 
 if [[ -z "$FINDINGS" ]]; then
@@ -50,7 +54,7 @@ fi
 echo ""
 printf "Apply fixes interactively? [y/N] "
 read -r response < /dev/tty
-[[ "${response,,}" != "y" ]] && exit 0
+[[ "$response" != "y" && "$response" != "Y" ]] && exit 0
 
 # Pass findings to an interactive claude session for applying fixes
 TMPFILE=$(mktemp /tmp/bug-findings-XXXXXX.json)
@@ -70,7 +74,7 @@ fi
 echo ""
 printf "Amend commit with these fixes? [Y/n] "
 read -r amend < /dev/tty
-if [[ "${amend,,}" != "n" ]]; then
+if [[ "$amend" != "n" && "$amend" != "N" ]]; then
   git add -A
   SKIP_BUG_SCAN=1 git commit --amend --no-edit
   echo "✅ Commit amended with fixes."
