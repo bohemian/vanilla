@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 GRADLEW = ./gradlew
 
-.PHONY: all build clean run test format review
+.PHONY: all build clean run test format review hooks
 
 all: build
 
@@ -25,3 +25,7 @@ review:
 
 package:
 	@./scripts/package.sh
+
+hooks:
+	git config core.hooksPath .githooks
+	@echo "✅ Git hooks activated (.githooks/post-commit)"

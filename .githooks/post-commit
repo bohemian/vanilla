@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Bug scan on every commit. Bypass with: git commit --no-verify
+# Skip programmatically by setting SKIP_BUG_SCAN=1 (used internally to prevent re-entry on amend).
+
+set -euo pipefail
+
+[[ "${SKIP_BUG_SCAN:-}" == "1" ]] && exit 0
+
+# Skip merge commits — no single change to review
+git rev-parse -q --verify MERGE_HEAD > /dev/null 2>&1 && exit 0
+
+# Ensure claude is available (it lives in nvm's bin, which git hooks don't see by default)
+if ! command -v claude &>/dev/null; then
+  export NVM_DIR="$HOME/.nvm"
+  # shellcheck source=/dev/null
+  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" --no-use 2>/dev/null
+  NVM_BIN=$(find "$HOME/.nvm/versions/node" -maxdepth 2 -name "bin" -type d 2>/dev/null | sort -V | tail -1)
+  [ -n "$NVM_BIN" ] && export PATH="$NVM_BIN:$PATH"
+fi
+
+if ! command -v claude &>/dev/null; then
+  echo "⚠️  claude not found — skipping bug scan (run 'make hooks' to verify setup)"
+  exit 0
+fi
+
+echo ""
+echo "🔍 Scanning commit for bugs..."
+
+FINDINGS=$(claude -p --agent commit-bug-detector "Review the latest commit for bugs." 2>/dev/null || true)
+
+if [[ -z "$FINDINGS" ]]; then
+  echo "✅ No bugs detected."
+  exit 0
+fi
+
+echo ""
+echo "⚠️  Potential bugs found:"
+if command -v jq &>/dev/null; then
+  echo "$FINDINGS" | jq -r '"  \(.file):\(.line) — \(.issue)"' 2>/dev/null || echo "$FINDINGS"
+else
+  echo "$FINDINGS"
+fi
+
+echo ""
+printf "Apply fixes interactively? [y/N] "
+read -r response < /dev/tty
+[[ "${response,,}" != "y" ]] && exit 0
+
+# Pass findings to an interactive claude session for applying fixes
+TMPFILE=$(mktemp /tmp/bug-findings-XXXXXX.json)
+trap 'rm -f "$TMPFILE"' EXIT
+printf '%s\n' "$FINDINGS" > "$TMPFILE"
+
+claude "The following bugs were found in the latest commit. Use the Edit tool to apply the fix for each one:
+
+$(cat "$TMPFILE")"
+
+# Amend the commit if any files were changed
+if git diff HEAD --quiet 2>/dev/null; then
+  echo "No changes were made."
+  exit 0
+fi
+
+echo ""
+printf "Amend commit with these fixes? [Y/n] "
+read -r amend < /dev/tty
+if [[ "${amend,,}" != "n" ]]; then
+  git add -A
+  SKIP_BUG_SCAN=1 git commit --amend --no-edit
+  echo "✅ Commit amended with fixes."
+fi
