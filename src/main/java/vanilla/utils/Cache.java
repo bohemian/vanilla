@@ -13,11 +13,9 @@ public class Cache<K, V> {
   }
 
   V get(K key) {
-    V result = cache.get(key);
-    if (result == null) {
-      result = calculation.apply(key);
-      cache.put(key, result);
+    if (!cache.containsKey(key)) {
+      cache.put(key, calculation.apply(key));
     }
-    return result;
+    return cache.get(key);
   }
 }

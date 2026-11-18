@@ -1,6 +1,6 @@
 ---
-name: bug-detector
-description: Detects potential bugs in code added in a PR diff
+name: introduced-bug-detector
+description: Detects potential bugs in code added by this PR (diff only)
 tools: Bash, Read
 model: sonnet
 ---
@@ -12,4 +12,4 @@ Look for:
 - Off-by-one errors
 - Swallowed or incorrectly handled exceptions
 
-Output fields: `file`, `line_content`, `issue`, `fix`
+Output fields: `file`, `line`, `line_content`, `issue`, `fix`

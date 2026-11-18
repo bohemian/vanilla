@@ -15,7 +15,7 @@ Invoke all four agents simultaneously using the Task tool, passing the base cont
 
 Agents to invoke:
 - **spelling-checker** — finds typos in comments and string literals. Output fields: `file`, `line`, `line_content`, `wrong`, `correct`
-- **bug-detector** — finds potential bugs and logic errors. Output fields: `file`, `line`, `line_content`, `issue`, `fix`
+- **introduced-bug-detector** — finds bugs in code added by this PR (diff only). Output fields: `file`, `line`, `line_content`, `issue`, `fix`
 - **java-best-practices** — finds Java/Spring anti-pattern violations. Output fields: `file`, `line`, `line_content`, `issue`, `scope` (suggestion|future-pr), `recommendation`
 - **security-reviewer** — finds security issues. Output fields: `file`, `line`, `line_content`, `issue`, `severity` (high|medium|low), `fix`
 
@@ -23,7 +23,7 @@ Agents to invoke:
 
 Post each finding as a **pull request review comment inline on the diff** (not a general PR comment). Inline review comments support GitHub suggestion blocks which give the reviewer a one-click "Apply suggestion" button.
 
-**From spelling-checker, bug-detector, security-reviewer, or java-best-practices with scope "suggestion":**
+**From spelling-checker, introduced-bug-detector, security-reviewer, or java-best-practices with scope "suggestion":**
 Post an inline review comment on `file` at `line` with a suggestion block as the body:
 ```suggestion
 [full corrected line]
