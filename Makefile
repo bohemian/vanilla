@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 GRADLEW = ./gradlew
 
-.PHONY: all build clean run test format review hooks
+.PHONY: all build clean run test format review hooks audit mutate
 
 all: build
 
@@ -26,6 +26,16 @@ review:
 package:
 	@./scripts/package.sh
 
+# Activate hooks and ensure all hook scripts are executable
 hooks:
+	chmod +x .githooks/pre-commit .githooks/commit-msg .githooks/pre-push .githooks/post-commit
 	git config core.hooksPath .githooks
-	@echo "✅ Git hooks activated (.githooks/post-commit)"
+	@echo "✅ Git hooks activated (pre-commit, commit-msg, pre-push, post-commit)"
+
+# Run OWASP dependency vulnerability scan (slow — downloads NVD data)
+audit:
+	$(GRADLEW) dependencyCheckAnalyze
+
+# Run PIT mutation testing (slow — reruns tests with code mutations)
+mutate:
+	$(GRADLEW) pitest

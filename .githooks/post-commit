@@ -36,7 +36,7 @@ SYSTEM=$(awk 'BEGIN{n=0} /^---/{n++; next} n>=2{print}' .claude/agents/qc/commit
 # changed files for SpotBugs filtering.
 FINDINGS=$(git show HEAD --no-color -- '*.java' '*.groovy' \
   | claude -p --model haiku \
-    --allowedTools "Bash(./gradlew:spotbugsMain),Bash(cat:*)" \
+    --allowedTools "Bash(./gradlew:spotbugsMain),Bash(./gradlew:pmdMain),Bash(cat:*)" \
     --system-prompt "$SYSTEM" 2>/dev/null \
   | grep -v '^\s*```' \
   | grep -v '^[^{]' \

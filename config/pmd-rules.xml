@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<ruleset name="vanilla"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+    <description>PMD rules for vanilla — focused on correctness and encapsulation</description>
+
+    <!-- Encapsulation: flag non-private instance fields (the main gap SpotBugs leaves).
+         VisibilityModifier was removed in PMD 7 — replaced with this XPath rule. -->
+    <rule name="PublicInstanceField"
+          language="java"
+          message="Field ''{0}'' is public non-static — instance fields should be private to maintain encapsulation"
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
+        <description>
+            Non-static instance fields should be private. Public fields expose internal
+            implementation details and allow external mutation. Use constructor injection
+            or accessors instead.
+        </description>
+        <priority>2</priority>
+        <properties>
+            <property name="xpath">
+                <value>//FieldDeclaration[@Visibility = "public" and not(@Static)]</value>
+            </property>
+        </properties>
+    </rule>
+
+    <rule ref="category/java/design.xml/ImmutableField"/>
+
+    <!-- Error-prone patterns -->
+    <rule ref="category/java/errorprone.xml/AvoidDecimalLiteralsInBigDecimalConstructor"/>
+    <rule ref="category/java/errorprone.xml/ReturnEmptyCollectionRatherThanNull"/>
+    <rule ref="category/java/errorprone.xml/UseEqualsToCompareStrings"/>
+    <rule ref="category/java/errorprone.xml/EqualsNull"/>
+
+    <!-- Best practices -->
+    <rule ref="category/java/bestpractices.xml/UnusedLocalVariable"/>
+    <rule ref="category/java/bestpractices.xml/UnusedFormalParameter">
+        <properties>
+            <!-- Allow unused params in overridden methods -->
+            <property name="checkAll" value="false"/>
+        </properties>
+    </rule>
+    <rule ref="category/java/bestpractices.xml/UseCollectionIsEmpty"/>
+    <rule ref="category/java/bestpractices.xml/SimplifiableTestAssertion"/>
+
+    <!-- Performance -->
+    <rule ref="category/java/performance.xml/UseStringBufferForStringAppends"/>
+    <rule ref="category/java/performance.xml/InefficientStringBuffering"/>
+</ruleset>

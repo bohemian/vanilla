@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Run the full test suite before pushing. Prevents broken builds reaching remote.
+# Bypass with: git push --no-verify
+
+set -euo pipefail
+
+# Skip in CI — the pipeline runs tests itself
+[[ "${CI:-}" == "true" ]] && exit 0
+
+# Check Docker is available for Testcontainers
+if ! docker info &>/dev/null 2>&1; then
+  echo "⚠️  Docker is not running — skipping pre-push test run."
+  echo "   Start Docker Desktop and re-push, or bypass with: git push --no-verify"
+  exit 1
+fi
+
+echo ""
+echo "🧪 Running tests before push..."
+if ./gradlew test --quiet 2>/dev/null; then
+  echo "✅ All tests passed."
+else
+  echo ""
+  echo "❌ Tests failed. Fix failures before pushing, or bypass with: git push --no-verify"
+  exit 1
+fi

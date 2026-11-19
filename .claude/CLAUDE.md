@@ -11,3 +11,7 @@ The post-commit hook will emit bug findings between `BUG_FINDINGS_JSON_BEGIN` an
 `BUG_FINDINGS_JSON_END` markers. If any findings appear, present them to the user,
 ask whether to apply fixes, apply them with the Edit tool if yes, then run
 `SKIP_BUG_SCAN=1 git commit --amend --no-edit` to fold the fixes into the commit.
+
+Commit messages MUST follow conventional commit format: `<type>(<scope>): <description>`
+Valid types: feat  fix  chore  docs  style  refactor  test  perf  ci  build  revert
+Example: `feat(product): add GET /products/{code} endpoint`

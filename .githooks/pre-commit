@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Fail fast on formatting violations before the commit lands.
+# Bypass with: git commit --no-verify
+
+set -euo pipefail
+
+echo "🎨 Checking formatting..."
+if ./gradlew spotlessCheck --quiet 2>/dev/null; then
+  echo "✅ Formatting OK."
+else
+  echo ""
+  echo "❌ Formatting violations found. Run 'make format' (or ./gradlew spotlessApply) then re-stage."
+  exit 1
+fi

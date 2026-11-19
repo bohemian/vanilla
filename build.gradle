@@ -2,10 +2,14 @@ plugins {
     id 'java'
     id 'groovy'
     id 'jacoco'
+    id 'pmd'
+    id 'maven-publish'
     id 'org.springframework.boot' version '4.0.1'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'com.diffplug.spotless' version '7.0.3'
     id 'com.github.spotbugs' version '6.1.11'
+    id 'info.solidsoft.pitest' version '1.19.0'
+    id 'org.owasp.dependencycheck' version '12.1.3'
 }
 
 spotless {
@@ -31,6 +35,70 @@ spotbugsMain {
 }
 
 spotbugsTest { enabled = false }
+
+pmd {
+    toolVersion = '7.7.0'
+    consoleOutput = false
+    ignoreFailures = true  // findings are advisory
+    ruleSetFiles = files('config/pmd-rules.xml')
+    ruleSets = []  // suppress default rulesets; use only config/pmd-rules.xml
+}
+
+pmdMain {
+    reports {
+        xml { required = true }
+        html { required = false }
+    }
+}
+
+pmdTest { enabled = false }
+
+jacoco {
+    toolVersion = '0.8.12'
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.60  // raise gradually as coverage improves
+            }
+        }
+    }
+}
+
+// Wire coverage gate into the standard check lifecycle
+check.dependsOn jacocoTestCoverageVerification
+jacocoTestCoverageVerification.dependsOn jacocoTestReport
+
+pitest {
+    targetClasses = ['vanilla.*']
+    targetTests = ['vanilla.*Spec', 'vanilla.*Test']
+    mutators = ['STRONGER']
+    outputFormats = ['XML', 'HTML']
+    timestampedReports = false
+    mutationThreshold = 70  // fail if < 70% of mutations are killed
+    junit5PluginVersion = '1.2.1'
+    // Run with: ./gradlew pitest  (slow — not wired into check)
+}
+
+dependencyCheck {
+    failBuildOnCVSS = 7  // fail on high/critical CVEs only
+    suppressionFile = 'config/owasp-suppressions.xml'
+    nvd {
+        apiKey = System.getenv('NVD_API_KEY') ?: ''
+    }
+    analyzers {
+        nuspecEnabled = false
+        nugetconfEnabled = false
+        nodeEnabled = false
+        nodeAuditEnabled = false
+        retirejs { enabled = false }
+    }
+    // Run with: ./gradlew dependencyCheckAnalyze  (slow — not wired into check)
+}
 
 group = 'com.spendwatt'
 version = '1.0.0'
@@ -79,6 +147,7 @@ dependencies {
     testImplementation "org.testcontainers:postgresql:1.21.4"
     testImplementation "org.testcontainers:spock:1.20.1"
     testImplementation "org.testcontainers:jdbc:1.21.4"
+    testImplementation "com.tngtech.archunit:archunit:1.3.0"
 //    testImplementation(libs.mockito)
 //    mockitoAgent(libs.mockito) {
 //        transitive = false
@@ -97,5 +166,23 @@ test {
     testLogging {
         events "skipped", "failed" // but not "passed"
         showStandardStreams = true
+    }
+}
+
+publishing {
+    publications {
+        boot(MavenPublication) {
+            artifact(tasks.bootJar)
+        }
+    }
+    repositories {
+        maven {
+            name = 'GitHubPackages'
+            url = uri("https://maven.pkg.github.com/bohemian/vanilla")
+            credentials {
+                username = System.getenv('GITHUB_ACTOR') ?: ''
+                password = System.getenv('GITHUB_TOKEN') ?: ''
+            }
+        }
     }
 }

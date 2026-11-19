@@ -1,11 +1,11 @@
 ---
 name: commit-bug-detector
-description: Scans the diff of the latest git commit for bugs using LLM analysis and SpotBugs static analysis
-tools: Bash(./gradlew:spotbugsMain),Bash(cat:*)
+description: Scans the diff of the latest git commit for bugs using LLM analysis, SpotBugs, and PMD
+tools: Bash(./gradlew:spotbugsMain),Bash(./gradlew:pmdMain),Bash(cat:*)
 model: haiku
 ---
 
-You will be given a git diff. Find bugs using two methods, then output all findings combined.
+You will be given a git diff. Find bugs using three methods, then output all findings combined.
 
 ## Method 1 — Diff analysis
 
@@ -35,15 +35,38 @@ cat build/reports/spotbugs/main.xml
 From the XML, identify changed files by looking at `+++ b/src/main/java/...` paths in the diff. For each `<BugInstance>` whose `<SourceLine sourcepath="...">` matches a changed file:
 - `file`: reconstruct as `src/main/java/` + `sourcepath` attribute
 - `line`: use the `start` attribute from `<SourceLine primary="true">` (or first `<SourceLine>`)
-- `line_content`: empty string (SpotBugs does not provide line content)
+- `line_content`: empty string
 - `issue`: text of the `<ShortMessage>` child element
 - `fix`: text of the `<LongMessage>` child element
 
 If `./gradlew spotbugsMain` fails or the report file is absent, skip Method 2 silently.
 
+## Method 3 — PMD analysis
+
+Run PMD on the compiled code:
+```
+./gradlew pmdMain --quiet 2>&1
+```
+
+Then read the report:
+```
+cat build/reports/pmd/main.xml
+```
+
+The PMD XML format is `<pmd><file name="..."><violation beginline="N" rule="..." ruleset="...">message</violation></file></pmd>`.
+
+For each `<violation>` in a file that was changed in the diff (match on the `name` attribute containing a changed class name):
+- `file`: the source path relative to the project root (strip the absolute prefix up to `src/main/java/`)
+- `line`: `beginline` attribute
+- `line_content`: empty string
+- `issue`: `rule` attribute + ": " + violation text content
+- `fix`: derive a fix from the rule name and violation message
+
+If `./gradlew pmdMain` fails or the report file is absent, skip Method 3 silently.
+
 ## Output
 
-Output each finding (from either method) as a raw JSON object on its own line — no markdown, no explanation, no wrapper array:
+Output each finding (from any method) as a raw JSON object on its own line — no markdown, no explanation, no wrapper array:
 `{"file":"path/to/File.java","line":N,"line_content":"the full added line or empty string","issue":"...","fix":"..."}`
 
-If no bugs are found by either method, output nothing at all.
+If no bugs are found by any method, output nothing at all.

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Enforce conventional commit format.
+# Bypass with: git commit --no-verify
+#
+# Valid types: feat, fix, chore, docs, style, refactor, test, perf, ci, build, revert
+# Examples:
+#   feat: add product search endpoint
+#   fix(quote): prevent integer overflow on large orders
+#   chore(deps): bump spring-boot to 4.0.2
+
+set -euo pipefail
+
+MSG=$(cat "$1")
+
+# Skip merge commits, revert commits, and fixup/squash commits
+if echo "$MSG" | grep -qE '^(Merge|Revert|fixup!|squash!)'; then
+  exit 0
+fi
+
+PATTERN='^(feat|fix|chore|docs|style|refactor|test|perf|ci|build|revert)(\(.+\))?: .{1,100}'
+
+if ! echo "$MSG" | grep -qE "$PATTERN"; then
+  echo ""
+  echo "❌ Commit message does not follow conventional commit format."
+  echo ""
+  echo "   Expected: <type>(<scope>): <description>"
+  echo "   Example:  feat(product): add GET /products/{code} endpoint"
+  echo ""
+  echo "   Valid types: feat  fix  chore  docs  style  refactor  test  perf  ci  build  revert"
+  echo ""
+  echo "   Your message: $MSG"
+  echo ""
+  echo "   Bypass with: git commit --no-verify"
+  exit 1
+fi
