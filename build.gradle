@@ -28,6 +28,7 @@ spotbugs {
 }
 
 spotbugsMain {
+    jvmArgs = ['-Xmx256m', '-XX:MaxMetaspaceSize=128m']
     reports {
         xml { required = true }
         html { required = false }
@@ -45,6 +46,7 @@ pmd {
 }
 
 pmdMain {
+    maxHeapSize = '128m'
     reports {
         xml { required = true }
         html { required = false }
@@ -97,10 +99,9 @@ dependencyCheck {
         nodeAuditEnabled = false
         retirejs { enabled = false }
     }
-    // Run with: ./gradlew dependencyCheckAnalyze  (slow — not wired into check)
 }
 
-group = 'com.spendwatt'
+group = 'com.vanilla'
 version = '1.0.0'
 
 repositories {
@@ -160,7 +161,10 @@ dependencies {
 }
 
 test {
-    jvmArgs "-javaagent:${configurations.testRuntimeClasspath.find { it.name.contains('mockito-core') }}", '-Xshare:off'
+    jvmArgs "-javaagent:${configurations.testRuntimeClasspath.find { it.name.contains('mockito-core') }}",
+            '-Xshare:off',
+            '-Xmx256m',
+            '-XX:MaxMetaspaceSize=128m'
     useJUnitPlatform()
     finalizedBy jacocoTestReport // Report is always generated after tests run
     testLogging {
