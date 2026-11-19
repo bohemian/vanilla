@@ -1,7 +1,17 @@
 SHELL := /bin/bash
 GRADLEW = ./gradlew
 
+# Target-specific defaults
+KEEP_DAYS ?= 1
+
 .PHONY: all build clean run test format review hooks audit mutate clean-gh-runs
+
+# Ensure a brew-installable tool is present; installs it automatically if missing.
+# Usage: $(call ensure-brew,executable,brew-package)
+define ensure-brew
+@command -v $(1) >/dev/null 2>&1 \
+  || { echo "Installing $(2) via Homebrew..."; brew install $(2); }
+endef
 
 all: build
 
@@ -40,11 +50,12 @@ audit:
 mutate:
 	$(GRADLEW) pitest
 
-# Delete completed GitHub Actions runs older than DAYS days (default: 1).
-# Use DAYS=0 or DAYS=all to delete all completed runs.
-DAYS ?= 1
+# Delete completed GitHub Actions runs older than KEEP_DAYS days (default: 1).
+# Use KEEP_DAYS=0 or KEEP_DAYS=all to delete all completed runs.
 clean-gh-runs:
-	@days="$(DAYS)"; \
+	$(call ensure-brew,gh,gh)
+	$(call ensure-brew,jq,jq)
+	@days="$(KEEP_DAYS)"; \
 	[ "$$days" = "all" ] && days=0; \
 	cutoff=$$(($$days * 86400)); \
 	gh run list --limit 100 --status completed --json databaseId,createdAt \
