@@ -40,8 +40,14 @@ audit:
 mutate:
 	$(GRADLEW) pitest
 
-# Delete completed GitHub Actions runs older than 1 day
+# Delete completed GitHub Actions runs older than DAYS days (default: 1).
+# Use DAYS=0 or DAYS=all to delete all completed runs.
+DAYS ?= 1
 clean-gh-runs:
+	@days="$(DAYS)"; \
+	[ "$$days" = "all" ] && days=0; \
+	cutoff=$$(($$days * 86400)); \
 	gh run list --limit 100 --status completed --json databaseId,createdAt \
-		| jq -r '.[] | select(.createdAt < (now - 86400 | todate)) | .databaseId' \
+		| jq -r --argjson cutoff "$$cutoff" \
+		  '.[] | select(.createdAt < (now - $$cutoff | todate)) | .databaseId' \
 		| xargs -I {} gh run delete {}
