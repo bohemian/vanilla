@@ -18,12 +18,12 @@ jobs:
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Set up Java 21 (for Spotless)
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
@@ -47,7 +47,7 @@ jobs:
           fi
 
       - name: Set up Java 25 (for build and test)
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '25'
@@ -65,7 +65,7 @@ jobs:
         run: ./gradlew assemble
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: application-jar
           path: build/libs/*.jar
@@ -73,7 +73,7 @@ jobs:
 
       - name: Upload analysis reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: analysis-reports
           path: |
@@ -86,7 +86,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.actor != 'github-actions[bot]'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Load review prompt
         id: prompt
         run: |
@@ -106,8 +106,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule' || (github.event_name == 'pull_request' && contains(toJson(github.event.pull_request.labels.*.name), 'dependencies'))
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '25'
@@ -120,7 +120,7 @@ jobs:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
       - name: Upload OWASP report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: owasp-report
           path: build/reports/dependency-check-report.html
@@ -136,10 +136,10 @@ jobs:
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Java 25
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '25'
@@ -151,7 +151,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Download pre-built JAR
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: application-jar
           path: build/libs/
