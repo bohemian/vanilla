@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 GRADLEW = ./gradlew
 
-.PHONY: all build clean run test format review hooks audit mutate
+.PHONY: all build clean run test format review hooks audit mutate clean-gh-runs
 
 all: build
 
@@ -39,3 +39,9 @@ audit:
 # Run PIT mutation testing (slow — reruns tests with code mutations)
 mutate:
 	$(GRADLEW) pitest
+
+# Delete completed GitHub Actions runs older than 1 day
+clean-gh-runs:
+	gh run list --limit 100 --status completed --json databaseId,createdAt \
+		| jq -r '.[] | select(.createdAt < (now - 86400 | todate)) | .databaseId' \
+		| xargs -I {} gh run delete {}
