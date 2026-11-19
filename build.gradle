@@ -164,7 +164,7 @@ test {
     jvmArgs "-javaagent:${configurations.testRuntimeClasspath.find { it.name.contains('mockito-core') }}",
             '-Xshare:off',
             '-Xmx256m',
-            '-XX:MaxMetaspaceSize=128m'
+            '-XX:MaxMetaspaceSize=384m'
     useJUnitPlatform()
     finalizedBy jacocoTestReport // Report is always generated after tests run
     testLogging {

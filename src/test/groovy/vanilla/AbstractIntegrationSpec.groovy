@@ -18,6 +18,10 @@ abstract class AbstractIntegrationSpec extends Specification {
             .withDatabaseName("testdb")
             .withUsername("testuser")
             .withPassword("testpass")
+            .withReuse(true)  // reuse container across test runs on this machine
+            .withCreateContainerCmdModifier({ cmd ->
+                cmd.hostConfig.withMemory(256 * 1024 * 1024L)  // cap Postgres at 256 MB
+            })
 
     def setupSpec() {
         if (!postgres.running) {
