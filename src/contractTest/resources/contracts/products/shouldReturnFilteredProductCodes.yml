@@ -1,0 +1,12 @@
+description: "GET /products?maxPriceCents=150 returns only W1 (123 cents); W2/W3/HEALTH are above the threshold"
+request:
+  method: GET
+  url: /products
+  queryParameters:
+    maxPriceCents: 150
+response:
+  status: 200
+  headers:
+    Content-Type: application/json
+  body:
+    - W1

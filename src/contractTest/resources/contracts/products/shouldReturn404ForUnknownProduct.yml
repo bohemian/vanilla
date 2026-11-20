@@ -1,0 +1,6 @@
+description: "GET /products/NONEXISTENT returns 404 for an unknown product code"
+request:
+  method: GET
+  url: /products/NONEXISTENT
+response:
+  status: 404

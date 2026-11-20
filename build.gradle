@@ -10,6 +10,9 @@ plugins {
     id 'com.github.spotbugs' version '6.1.11'
     id 'info.solidsoft.pitest' version '1.19.0'
     id 'org.owasp.dependencycheck' version '12.1.3'
+    // Spring Cloud Contract — verify this version is compatible with Spring Boot 4.x;
+    // update to 5.x.x when the Spring Cloud 2025.0.x release train is available.
+    id 'org.springframework.cloud.contract' version "$springCloudContractVersion"
 }
 
 spotless {
@@ -113,6 +116,24 @@ repositories {
     mavenCentral()
 }
 
+dependencyManagement {
+    imports {
+        // Spring Cloud BOM — aligns all spring-cloud-* versions with each other.
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion"
+    }
+}
+
+contracts {
+    testFramework = org.springframework.cloud.contract.verifier.config.TestFramework.JUNIT5
+    // WEBTESTCLIENT mode: generated tests use Spring's WebTestClient backed by MockMvcWebTestClient.
+    // This avoids two Spring Boot 4 / Spring Cloud Contract 4.x incompatibilities:
+    //   1. MOCKMVC mode: MockHttpServletRequestBuilder.header(String, Object[]) removed in Spring 7
+    //   2. EXPLICIT mode: RestAssured 5.2.1 Groovy internals conflict with the project's Groovy 5.x
+    // Update to Spring Cloud Contract 5.x when the Spring Cloud 2025.0.x train ships for Boot 4.
+    testMode = org.springframework.cloud.contract.verifier.config.TestMode.WEBTESTCLIENT
+    baseClassForTests = 'vanilla.contracts.ContractVerifierBase'
+}
+
 jar {
     manifest {
         attributes "Main-Class": "vanilla.Application"
@@ -159,6 +180,13 @@ dependencies {
 //    mockitoAgent(libs.mockito) {
 //        transitive = false
 //    }
+    testImplementation 'org.springframework.cloud:spring-cloud-starter-contract-verifier'
+    testImplementation "io.rest-assured:spring-web-test-client:$restAssuredVersion"
+    // WebTestClient (used by spring-web-test-client) requires the reactive-streams API
+    // which ships with spring-webflux. This does not activate WebFlux at runtime since
+    // Spring Boot auto-detects the MVC stack when both are on the classpath.
+    testImplementation "org.springframework.boot:spring-boot-starter-webflux:$springVersion"
+
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testRuntimeOnly "net.bytebuddy:byte-buddy:$bytebuddyVersion"
     testRuntimeOnly "org.objenesis:objenesis:$objenesisVersion"

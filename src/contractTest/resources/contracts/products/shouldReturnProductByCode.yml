@@ -1,0 +1,17 @@
+description: "GET /products/W1 returns the product details for the W1 widget"
+request:
+  method: GET
+  url: /products/W1
+response:
+  status: 200
+  headers:
+    Content-Type: application/json
+  body:
+    id: 1
+    code: W1
+    name: Widget 1
+    priceCents: 123
+  bodyMatchers:
+    jsonPath:
+      - path: $.id
+        type: by_type
