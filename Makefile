@@ -79,9 +79,11 @@ deploy:
 	  kubectl rollout status deployment/vanilla --timeout=120s
 	@echo ""
 	@echo "Postgres → localhost:5432  (user: vanilla  pass: vanilla  db: vanilla)"
-	@echo "App      → http://localhost:8080  (Ctrl+C to stop forwarding)"
+	@echo "App      → http://localhost:8080"
+	@echo "Debugger → localhost:5005  (attach remote JVM debugger, e.g. IntelliJ Run > Attach to Process)"
+	@echo "Ctrl+C to stop forwarding"
 	@echo ""
-	@kubectl port-forward svc/vanilla 8080:8080
+	@kubectl port-forward svc/vanilla 8080:8080 5005:5005
 
 # Delete completed GitHub Actions runs older than KEEP_DAYS days (default: 1).
 # Use KEEP_DAYS=0 or KEEP_DAYS=NONE to delete all completed runs.

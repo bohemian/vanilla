@@ -34,8 +34,13 @@ spec:
                 secretKeyRef:
                   name: db-credentials
                   key: password
+            # Enables JDWP remote debugging on port 5005. suspend=n lets the server
+            # start immediately without waiting for a debugger to attach.
+            - name: JAVA_TOOL_OPTIONS
+              value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
           ports:
             - containerPort: 8080
+            - containerPort: 5005
           resources:
             limits:
               memory: 512Mi
@@ -48,5 +53,9 @@ spec:
   selector:
     app: vanilla
   ports:
-    - port: 8080
+    - name: http
+      port: 8080
       targetPort: 8080
+    - name: debug
+      port: 5005
+      targetPort: 5005
