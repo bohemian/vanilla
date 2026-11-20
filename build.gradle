@@ -62,13 +62,19 @@ jacoco {
     toolVersion = '0.8.12'
 }
 
+jacocoTestReport {
+    reports {
+        xml.required = true
+    }
+}
+
 jacocoTestCoverageVerification {
     violationRules {
         rule {
             limit {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
-                minimum = 0.40  // raise gradually as coverage improves
+                minimum = 0.80
             }
         }
     }

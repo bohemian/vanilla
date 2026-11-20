@@ -36,4 +36,19 @@ class ProductServiceSpec extends Specification {
         then:
         result == []
     }
+
+    def "getAllProducts delegates to repository findAll"() {
+        given:
+        productRepository.findAll() >> [
+            new Product(code: 'A', priceCents: 100),
+            new Product(code: 'B', priceCents: 200),
+        ]
+
+        when:
+        def result = service.getAllProducts()
+
+        then:
+        result.size() == 2
+        result*.code == ['A', 'B']
+    }
 }
