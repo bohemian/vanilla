@@ -208,12 +208,34 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      # Build into the local Docker daemon only — do not push yet.
+      # The image must be local for Trivy to scan it without registry auth.
+      - name: Build Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
+          push: false
+          load: true
           tags: |
             ghcr.io/bohemian/vanilla:${{ steps.meta.outputs.version }}
             ghcr.io/bohemian/vanilla:sha-${{ steps.meta.outputs.sha }}
             ghcr.io/bohemian/vanilla:latest
+
+      # Fail on CRITICAL or HIGH CVEs with a fix available.
+      # Ignoring unfixed vulnerabilities reduces noise from OS packages
+      # that have no upstream patch yet.
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/bohemian/vanilla:latest
+          format: table
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+
+      # Only reached if the Trivy scan above passes.
+      - name: Push Docker image
+        run: |
+          docker push ghcr.io/bohemian/vanilla:${{ steps.meta.outputs.version }}
+          docker push ghcr.io/bohemian/vanilla:sha-${{ steps.meta.outputs.sha }}
+          docker push ghcr.io/bohemian/vanilla:latest
