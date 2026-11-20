@@ -2,6 +2,7 @@ package vanilla.controller
 
 import groovy.json.JsonSlurper
 import org.springframework.boot.test.web.server.LocalServerPort
+import spock.lang.Shared
 import vanilla.AbstractIntegrationSpec
 
 import java.net.http.HttpClient
@@ -13,6 +14,7 @@ class QuoteControllerSpec extends AbstractIntegrationSpec {
     @LocalServerPort
     int port
 
+    @Shared
     HttpClient httpClient = HttpClient.newHttpClient()
 
     private HttpResponse<String> post(String path, String body) {
