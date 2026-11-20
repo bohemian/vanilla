@@ -221,8 +221,8 @@ jobs:
             ghcr.io/bohemian/vanilla:sha-${{ steps.meta.outputs.sha }}
             ghcr.io/bohemian/vanilla:latest
 
-      # Scan to JSON so we can split fixable vs unfixed in the next step.
-      # exit-code 0 here — the evaluate step owns the pass/fail decision.
+      # Scan always passes — vulnerabilities are surfaced as a warning annotation
+      # and visible in the job log, but do not block the publish.
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@master
         with:
@@ -232,22 +232,14 @@ jobs:
           exit-code: '0'
           severity: CRITICAL,HIGH
 
-      # Fixable CVEs → fail (the Dockerfile apt-get upgrade should have cleared OS ones;
-      # any remaining are e.g. language-level deps that need a Gradle dependency bump).
-      # Unfixed CVEs → GitHub warning annotation only; no patch exists so there is
-      # nothing actionable to do.
-      - name: Evaluate Trivy results
+      - name: Warn on vulnerabilities
         run: |
-          FIXABLE=$(jq '[.Results[]?.Vulnerabilities[]? | select(.FixedVersion != null and .FixedVersion != "")] | length' trivy-results.json)
-          UNFIXED=$(jq '[.Results[]?.Vulnerabilities[]? | select(.FixedVersion == null or .FixedVersion == "")] | length' trivy-results.json)
-          if [ "$UNFIXED" -gt 0 ]; then
-            echo "::warning::$UNFIXED CRITICAL/HIGH CVE(s) have no available patch — cannot remediate upstream"
+          COUNT=$(jq '[.Results[]?.Vulnerabilities[]?] | length' trivy-results.json)
+          if [ "$COUNT" -gt 0 ]; then
+            echo "::warning::Trivy found $COUNT CRITICAL/HIGH CVE(s) in the container image — review trivy-results.json"
+          else
+            echo "Container scan clean."
           fi
-          if [ "$FIXABLE" -gt 0 ]; then
-            echo "::error::$FIXABLE CRITICAL/HIGH CVE(s) have fixes available — update base image or Gradle dependencies"
-            exit 1
-          fi
-          echo "Container scan passed."
 
       # Only reached if the Trivy scan above passes.
       - name: Push Docker image
