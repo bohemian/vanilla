@@ -138,6 +138,7 @@ dependencies {
     implementation "org.postgresql:postgresql:$postgresqlDriverVersion"
     implementation "org.flywaydb:flyway-core:11.20.0"
     implementation "org.flywaydb:flyway-database-postgresql:11.20.0"
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9"
 
     testImplementation platform("org.spockframework:spock-bom:$spockVersion")
     testImplementation "org.spockframework:spock-core:$spockVersion"

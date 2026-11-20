@@ -3,7 +3,6 @@ GRADLEW = ./gradlew
 
 # Target-specific defaults
 KEEP_DAYS ?= 1
-CLUSTER_NAME ?= vanilla
 VERSION ?= local
 
 .PHONY: all build clean run test format review hooks audit mutate clean-gh-runs deploy
@@ -52,38 +51,25 @@ audit:
 mutate:
 	$(GRADLEW) pitest
 
-# Deploy to a local k3d (k3s-in-Docker) Kubernetes cluster.
-# VERSION=local (default): builds the JAR + Docker image locally and imports it into k3d.
+# Deploy locally using Docker Compose.
+# VERSION=local (default): builds the JAR and Docker image locally.
 # VERSION=<tag>:           pulls ghcr.io/bohemian/vanilla:<tag> from GitHub Container Registry.
-# Postgres is exposed permanently at localhost:5432 via a k3d port mapping (no port-forward needed).
-# The app is forwarded to http://localhost:8080 — Ctrl+C to stop.
+# Postgres → localhost:5432, App → http://localhost:8080, Debugger → localhost:5005.
+# Ctrl+C to stop.
 deploy:
-	$(call ensure-brew,k3d,k3d)
-	$(call ensure-brew,kubectl,kubectl)
-	@k3d cluster get $(CLUSTER_NAME) >/dev/null 2>&1 \
-	  || k3d cluster create $(CLUSTER_NAME) \
-	       --port "5432:30432@loadbalancer" \
-	       --k3s-arg "--disable=traefik@server:0"
 	@if [ "$(VERSION)" = "local" ]; then \
 	    echo "Building JAR and Docker image..."; \
 	    $(GRADLEW) bootJar; \
-	    docker build -t vanilla:local .; \
-	    k3d image import vanilla:local -c $(CLUSTER_NAME); \
-	    IMAGE="vanilla:local"; \
+	    VANILLA_IMAGE=vanilla:local docker compose up --build --wait; \
 	  else \
-	    IMAGE="ghcr.io/bohemian/vanilla:$(VERSION)"; \
-	  fi; \
-	  kubectl apply -f k8s/postgres.yaml; \
-	  kubectl rollout status deployment/postgres --timeout=60s; \
-	  sed "s|VANILLA_IMAGE|$$IMAGE|" k8s/app.yaml | kubectl apply -f -; \
-	  kubectl rollout status deployment/vanilla --timeout=120s
+	    VANILLA_IMAGE=ghcr.io/bohemian/vanilla:$(VERSION) docker compose up --no-build --wait; \
+	  fi
 	@echo ""
 	@echo "Postgres → localhost:5432  (user: vanilla  pass: vanilla  db: vanilla)"
 	@echo "App      → http://localhost:8080"
 	@echo "Debugger → localhost:5005  (attach remote JVM debugger, e.g. IntelliJ Run > Attach to Process)"
-	@echo "Ctrl+C to stop forwarding"
 	@echo ""
-	@kubectl port-forward svc/vanilla 8080:8080 5005:5005
+	@echo "Run 'docker compose down' to stop."
 
 # Delete completed GitHub Actions runs older than KEEP_DAYS days (default: 1).
 # Use KEEP_DAYS=0 or KEEP_DAYS=NONE to delete all completed runs.
