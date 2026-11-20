@@ -1,0 +1,52 @@
+# VANILLA_IMAGE is replaced at deploy time by the Makefile deploy target.
+# For VERSION=local it becomes vanilla:local (imported into k3d via k3d image import).
+# For VERSION=<tag> it becomes ghcr.io/bohemian/vanilla:<tag> (pulled from GHCR).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vanilla
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vanilla
+  template:
+    metadata:
+      labels:
+        app: vanilla
+    spec:
+      containers:
+        - name: vanilla
+          image: VANILLA_IMAGE
+          # IfNotPresent works for both cases: k3d image import loads the image into
+          # containerd so it is already "present"; GHCR images are pulled on first use.
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres:5432/vanilla
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+          ports:
+            - containerPort: 8080
+          resources:
+            limits:
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vanilla
+spec:
+  selector:
+    app: vanilla
+  ports:
+    - port: 8080
+      targetPort: 8080

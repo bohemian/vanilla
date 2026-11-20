@@ -3,8 +3,10 @@ GRADLEW = ./gradlew
 
 # Target-specific defaults
 KEEP_DAYS ?= 1
+CLUSTER_NAME ?= vanilla
+VERSION ?= local
 
-.PHONY: all build clean run test format review hooks audit mutate clean-gh-runs
+.PHONY: all build clean run test format review hooks audit mutate clean-gh-runs deploy
 
 # Ensure a brew-installable tool is present; installs it automatically if missing.
 # Usage: $(call ensure-brew,executable,brew-package)
@@ -50,6 +52,37 @@ audit:
 mutate:
 	$(GRADLEW) pitest
 
+# Deploy to a local k3d (k3s-in-Docker) Kubernetes cluster.
+# VERSION=local (default): builds the JAR + Docker image locally and imports it into k3d.
+# VERSION=<tag>:           pulls ghcr.io/bohemian/vanilla:<tag> from GitHub Container Registry.
+# Postgres is exposed permanently at localhost:5432 via a k3d port mapping (no port-forward needed).
+# The app is forwarded to http://localhost:8080 — Ctrl+C to stop.
+deploy:
+	$(call ensure-brew,k3d,k3d)
+	$(call ensure-brew,kubectl,kubectl)
+	@k3d cluster get $(CLUSTER_NAME) >/dev/null 2>&1 \
+	  || k3d cluster create $(CLUSTER_NAME) \
+	       --port "5432:30432@loadbalancer" \
+	       --k3s-arg "--disable=traefik@server:0"
+	@if [ "$(VERSION)" = "local" ]; then \
+	    echo "Building JAR and Docker image..."; \
+	    $(GRADLEW) bootJar; \
+	    docker build -t vanilla:local .; \
+	    k3d image import vanilla:local -c $(CLUSTER_NAME); \
+	    IMAGE="vanilla:local"; \
+	  else \
+	    IMAGE="ghcr.io/bohemian/vanilla:$(VERSION)"; \
+	  fi; \
+	  kubectl apply -f k8s/postgres.yaml; \
+	  kubectl rollout status deployment/postgres --timeout=60s; \
+	  sed "s|VANILLA_IMAGE|$$IMAGE|" k8s/app.yaml | kubectl apply -f -; \
+	  kubectl rollout status deployment/vanilla --timeout=120s
+	@echo ""
+	@echo "Postgres → localhost:5432  (user: vanilla  pass: vanilla  db: vanilla)"
+	@echo "App      → http://localhost:8080  (Ctrl+C to stop forwarding)"
+	@echo ""
+	@kubectl port-forward svc/vanilla 8080:8080
+
 # Delete completed GitHub Actions runs older than KEEP_DAYS days (default: 1).
 # Use KEEP_DAYS=0 or KEEP_DAYS=NONE to delete all completed runs.
 clean-gh-runs:
@@ -61,4 +94,4 @@ clean-gh-runs:
 	gh run list --limit 100 --status completed --json databaseId,createdAt \
 		| jq -r --argjson cutoff "$$cutoff" \
 		  '.[] | select(.createdAt < (now - $$cutoff | todate)) | .databaseId' \
-		| xargs -P 10 -I {} gh run delete {}
+		| xargs -P 8 -I {} gh run delete {}
