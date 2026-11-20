@@ -33,4 +33,18 @@ class QuoteServiceComponentSpec extends Specification {
         ['W1': 2000000, 'W2': 1] | 1111L * 2000000 + 2222L * 1  // overflows int
     }
 
+    def "getQuote throws IllegalArgumentException for unknown product codes"() {
+        given:
+        def repo = Mock(ProductRepository)
+        repo.findAllByCodeIn(_) >> []
+        def service = new QuoteService(repo)
+
+        when:
+        service.getQuote(new QuoteParams(['UNKNOWN': 1]))
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message.contains('UNKNOWN')
+    }
+
 }

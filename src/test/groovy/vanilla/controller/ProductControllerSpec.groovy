@@ -5,6 +5,7 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import org.springframework.boot.test.web.server.LocalServerPort
+import spock.lang.Shared
 import vanilla.AbstractIntegrationSpec
 
 class ProductControllerSpec extends AbstractIntegrationSpec {
@@ -12,6 +13,7 @@ class ProductControllerSpec extends AbstractIntegrationSpec {
     @LocalServerPort
     int port
 
+    @Shared
     HttpClient httpClient = HttpClient.newHttpClient()
 
     private HttpResponse<String> get(String path) {

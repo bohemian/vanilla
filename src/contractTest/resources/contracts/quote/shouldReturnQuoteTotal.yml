@@ -1,0 +1,15 @@
+description: "POST /quote for 2x W1 (123 cents each) returns totalCents: 246"
+request:
+  method: POST
+  url: /quote
+  headers:
+    Content-Type: application/json
+  body:
+    productCodeQuantities:
+      W1: 2
+response:
+  status: 200
+  headers:
+    Content-Type: application/json
+  body:
+    totalCents: 246

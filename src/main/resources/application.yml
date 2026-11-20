@@ -8,6 +8,12 @@ management:
     health:
       probes:
         enabled: true  # exposes /actuator/health/liveness and /actuator/health/readiness
+      show-details: always   # include per-indicator details in /actuator/health response
+      show-components: always
+  endpoints:
+    web:
+      exposure:
+        include: health,info  # expose /actuator/health and /actuator/info over HTTP
   health:
     livenessState:
       enabled: true
