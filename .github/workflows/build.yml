@@ -59,9 +59,18 @@ jobs:
           distribution: temurin
           java-version: '25'
 
+      # Static analysis runs before tests: SpotBugs/PMD operate on compiled bytecode and
+      # complete in seconds, giving fast feedback on potential bugs before the slower test suite.
+      - name: Static analysis (SpotBugs + PMD)
+        run: ./gradlew spotbugsMain pmdMain
+
       - name: Test
         run: ./gradlew test
 
+      - name: Coverage gate
+        run: ./gradlew jacocoTestCoverageVerification
+
+      # Runs after coverage so a contract failure does not block the coverage gate.
       # Spring Cloud Contract 4.x is incompatible with Spring Framework 7 (Spring Boot 4.x):
       # all three test modes (MOCKMVC/EXPLICIT/WEBTESTCLIENT) hit different API breaks in SFW7.
       # The contracts and stub JARs are generated and published correctly; only contractTest fails.
@@ -70,11 +79,22 @@ jobs:
         run: ./gradlew contractTest
         continue-on-error: true
 
-      - name: Static analysis (SpotBugs + PMD)
-        run: ./gradlew spotbugsMain pmdMain
-
-      - name: Coverage gate
-        run: ./gradlew jacocoTestCoverageVerification
+      # Tick off checklist items whose corresponding CI steps have passed.
+      # Only runs on PRs; skipped on direct pushes.
+      - name: Check off passed checklist items
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 - <<'PYEOF'
+          import subprocess, json, re
+          pr = '${{ github.event.pull_request.number }}'
+          body = json.loads(subprocess.check_output(['gh', 'pr', 'view', pr, '--json', 'body']))['body'] or ''
+          # Both static analysis and tests passed to reach this step
+          body = re.sub(r'- \[ \] (No new SpotBugs)', r'- [x] \1', body)
+          body = re.sub(r'- \[ \] (Tests pass)',       r'- [x] \1', body)
+          subprocess.run(['gh', 'pr', 'edit', pr, '--body', body], check=True)
+          PYEOF
 
       - name: Build
         run: ./gradlew assemble

@@ -16,7 +16,7 @@
 
 ## Checklist
 
-- [ ] Tests pass (`./gradlew test`)
 - [ ] No new SpotBugs / PMD warnings introduced
+- [ ] Tests pass (`./gradlew test`)
 - [ ] API changes are reflected in OpenAPI (Springdoc auto-generates from annotations)
 - [ ] DB migrations are backward-compatible (old app can still run against new schema)
