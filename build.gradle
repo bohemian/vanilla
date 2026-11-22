@@ -206,9 +206,39 @@ test {
             '-Xmx256m',
             '-XX:MaxMetaspaceSize=384m'
     useJUnitPlatform()
+    // Exclude the backward-compat spec: it uses its own fresh container and must be run
+    // via the migrationCompatTest task with a -PflywayTarget so the target version is set.
+    exclude '**/MigrationBackwardCompatSpec.*'
     finalizedBy jacocoTestReport // Report is always generated after tests run
     testLogging {
         events "skipped", "failed" // but not "passed"
+        showStandardStreams = true
+    }
+}
+
+tasks.register('migrationCompatTest', Test) {
+    description = 'Verifies the app starts and handles requests against the old DB schema ' +
+                  '(without migrations added in this PR). Run with -PflywayTarget=<N>.'
+    group = 'verification'
+
+    // spring.flyway.target is read by Spring Boot Flyway auto-config from the Spring Environment,
+    // which includes JVM system properties. Setting it here caps Flyway at version N so the app
+    // starts against the old schema, exposing any code that requires the new migration to exist.
+    if (project.hasProperty('flywayTarget')) {
+        systemProperty 'spring.flyway.target', project.flywayTarget
+    }
+
+    filter {
+        includeTestsMatching '*MigrationBackwardCompatSpec'
+    }
+
+    jvmArgs "-javaagent:${configurations.testRuntimeClasspath.find { it.name.contains('mockito-core') }}",
+            '-Xshare:off',
+            '-Xmx256m',
+            '-XX:MaxMetaspaceSize=384m'
+    useJUnitPlatform()
+    testLogging {
+        events "skipped", "failed"
         showStandardStreams = true
     }
 }
