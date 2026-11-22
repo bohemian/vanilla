@@ -102,6 +102,34 @@ jobs:
         with:
           files: build/reports/jacoco/test/jacocoTestReport.xml
 
+  describe-pr:
+    runs-on: ubuntu-latest
+    # Only on first open — not on every subsequent push to the branch.
+    # Skips the bot to avoid rewriting a description the bot itself just set.
+    if: github.event_name == 'pull_request' && github.event.action == 'opened' && github.actor != 'github-actions[bot]'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # full history needed for git diff origin/<base>...HEAD
+      - name: Load prompt
+        id: prompt
+        run: |
+          PROMPT=$(awk 'BEGIN{n=0} /^---/{n++; next} n>=2{print}' .claude/agents/pr-description/pr-description.md)
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$PROMPT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      - name: Generate PR description
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          claude_args: '--allowedTools "Bash(git:*,gh:*)"'
+          prompt: ${{ steps.prompt.outputs.content }}
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+
   pr-review:
     runs-on: ubuntu-latest
     # Exclude github-actions[bot] to prevent an infinite loop: the bot's own Spotless
