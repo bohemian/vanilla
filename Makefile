@@ -36,26 +36,22 @@ setup:
 	@echo "   Then run: make deploy"
 
 # Interactive prompt to create a Conventional Branch (https://conventionalbranch.org).
+# Branch types are read from .branch-types (format: type|description).
 # Paste a Jira/Linear title directly — spaces and special chars are converted to hyphens.
 branch:
-	@echo ""; \
+	@[ -f .branch-types ] || { echo "❌ .branch-types not found"; exit 1; }; \
+	echo ""; \
 	echo "Create a conventional branch"; \
 	echo ""; \
-	echo "  1) feat   — new feature"; \
-	echo "  2) fix    — bug fix"; \
-	echo "  3) chore  — maintenance (deps, docs, config)"; \
-	echo "  4) hotfix — urgent production fix"; \
-	echo "  5) ai     — AI-assisted change"; \
+	awk -F'|' '/^[[:space:]]*#/{next} /^[[:space:]]*$$/{next} \
+	  {i++; printf "  %d) %-8s — %s\n", i, $$1, $$2}' .branch-types; \
+	COUNT=$$(awk -F'|' '/^[[:space:]]*#/{next} /^[[:space:]]*$$/{next} {i++} END{print i+0}' .branch-types); \
 	echo ""; \
-	printf "Type [1-5]: "; read -r n </dev/tty; \
-	case $$n in \
-	  1) type=feat   ;; \
-	  2) type=fix    ;; \
-	  3) type=chore  ;; \
-	  4) type=hotfix ;; \
-	  5) type=ai     ;; \
-	  *) echo "Invalid selection '$$n'" >&2; exit 1 ;; \
-	esac; \
+	printf "Type [1-$$COUNT]: "; read -r n </dev/tty; \
+	echo "$$n" | grep -qE '^[0-9]+$$' || { echo "Invalid selection '$$n'" >&2; exit 1; }; \
+	[ "$$n" -ge 1 ] && [ "$$n" -le "$$COUNT" ] \
+	  || { echo "Invalid selection '$$n'" >&2; exit 1; }; \
+	type=$$(awk -F'|' -v sel="$$n" '/^[[:space:]]*#/{next} /^[[:space:]]*$$/{next} {i++} i==sel{print $$1; exit}' .branch-types); \
 	echo ""; \
 	printf "Description: "; read -r desc </dev/tty; \
 	slug=$$(echo "$$desc" \

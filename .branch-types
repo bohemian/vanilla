@@ -1,0 +1,13 @@
+# Branch types for this project — edit to suit your team.
+# Format: type|description
+# Lines starting with # and blank lines are ignored.
+# Both make branch (interactive menu) and the post-checkout hook
+# read this file, so adding a type here enables it everywhere.
+#
+# See https://conventionalbranch.org for the full spec.
+# Trunk branches (main, master, develop) are always allowed implicitly.
+feat|new feature
+fix|bug fix
+chore|maintenance (deps, docs, config)
+hotfix|urgent production fix
+ai|AI-assisted change

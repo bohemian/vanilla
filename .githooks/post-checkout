@@ -17,9 +17,16 @@ BRANCH=$(git rev-parse --abbrev-ref HEAD)
 # Trunk branches and detached HEAD are always fine
 [[ "$BRANCH" =~ ^(main|master|develop|HEAD)$ ]] && exit 0
 
-# ERE equivalent of Conventional Branch v1.1.0 grammar.regex from spec.json
-# https://conventionalbranch.org/spec.json
-CB_REGEX='^(main|master|develop|(feature|feat|bugfix|fix|hotfix|chore|ai|copilot|cursor|claude|codex)/[a-z0-9]+(\.[a-z0-9]+)*(-[a-z0-9]+(\.[a-z0-9]+)*)*)$'
+# Build the allowed-types alternation from .branch-types (type|description lines).
+# Falls back to a sensible default if the file is absent.
+if [[ -f .branch-types ]]; then
+  TYPES=$(awk -F'|' '/^[[:space:]]*#/{next} /^[[:space:]]*$/{next} {printf "%s|", $1}' .branch-types \
+          | sed 's/|$//')
+else
+  TYPES="feature|feat|bugfix|fix|hotfix|chore|ai"
+fi
+
+CB_REGEX="^(main|master|develop|($TYPES)/[a-z0-9]+(\.[a-z0-9]+)*(-[a-z0-9]+(\.[a-z0-9]+)*)*)\$"
 
 if ! echo "$BRANCH" | grep -qE "$CB_REGEX"; then
   echo ""
@@ -27,8 +34,7 @@ if ! echo "$BRANCH" | grep -qE "$CB_REGEX"; then
   echo "   https://conventionalbranch.org"
   echo ""
   echo "   Format:  <type>/<description>"
-  echo "   Types:   feature (feat)  bugfix (fix)  hotfix  chore"
-  echo "            ai  claude  codex  copilot  cursor"
+  echo "   Types:   $(echo "$TYPES" | tr '|' '  ')"
   echo "   Rules:   lowercase, hyphens between words, dots for versions"
   echo ""
   echo "   Rename:  git branch -m <new-name>"
