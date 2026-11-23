@@ -79,7 +79,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git fetch origin ${{ github.base_ref }} --depth=1
-          NEW_MIGRATIONS=$(git diff origin/${{ github.base_ref }}...HEAD \
+          # Two-dot (..) diffs the two tree states directly — no merge base needed,
+          # so this works with shallow clones. Three-dot (...) requires a common
+          # ancestor which shallow history cannot provide.
+          NEW_MIGRATIONS=$(git diff origin/${{ github.base_ref }}..HEAD \
             --name-only --diff-filter=A -- 'src/main/resources/db/migration/*.sql')
           if [ -z "$NEW_MIGRATIONS" ]; then
             echo "No new migrations in this PR — skipping backward-compat test"
