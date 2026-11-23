@@ -5,7 +5,7 @@ GRADLEW = ./gradlew
 KEEP_DAYS ?= 1
 VERSION ?= local
 
-.PHONY: all build clean run test format review hooks audit mutate clean-gh-runs deploy setup branch
+.PHONY: all build clean run test format review hooks audit mutate clean-gh-runs deploy setup branch release
 
 # Ensure a brew-installable tool is present; installs it automatically if missing.
 # Usage: $(call ensure-brew,executable,brew-package)
@@ -68,6 +68,12 @@ branch:
 	printf "Create branch \"%s\"? [Y/n] " "$$branch"; read -r confirm </dev/tty; \
 	case "$$confirm" in [nN]*) echo "Aborted." && exit 0 ;; esac; \
 	git checkout -b "$$branch"
+
+# Analyse commits since last release tag, suggest a semver bump via Claude,
+# confirm with the user, update build.gradle, commit, tag, and push.
+# The release.yml CI workflow triggers on the pushed tag to publish all artefacts.
+release:
+	@bash scripts/release.sh
 
 all: build
 
