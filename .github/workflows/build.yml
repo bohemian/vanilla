@@ -167,6 +167,52 @@ jobs:
         with:
           files: build/reports/jacoco/test/jacocoTestReport.xml
 
+  bdd-test:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name != 'schedule'
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Grant execute permission
+        run: chmod +x gradlew
+
+      - name: Download pre-built JAR
+        uses: actions/download-artifact@v5
+        with:
+          name: application-jar
+          path: build/libs/
+
+      - name: Build Docker image
+        run: docker build -t vanilla:bdd .
+
+      - name: Start services
+        run: VANILLA_IMAGE=vanilla:bdd docker compose up --no-build --wait --wait-timeout 240
+
+      - name: Run BDD tests
+        run: ./gradlew bddTest
+
+      - name: Upload BDD reports
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: bdd-reports
+          path: build/reports/tests/bddTest/
+          retention-days: 14
+
+      - name: Tear down
+        if: always()
+        run: docker compose down
+
   describe-pr:
     runs-on: ubuntu-latest
     # Only on first open — not on every subsequent push to the branch.

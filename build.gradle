@@ -165,9 +165,14 @@ openApi {
 
 // Source set for the generated client. Only the Java source directory is wired in;
 // the rest of openApiGenerate's output (build scripts, .gitignore, etc.) is ignored.
+// Source set for JBehave black-box BDD tests that run against a live app.
 sourceSets {
     client {
         java.srcDirs = ["${layout.buildDirectory.get()}/generated/openapi-client/src/main/java"]
+    }
+    bdd {
+        java.srcDirs = ['src/bdd/java']
+        resources.srcDirs = ['src/bdd/resources']
     }
 }
 
@@ -175,6 +180,8 @@ sourceSets {
 // (spring-web, jackson-databind, etc. all come in via spring-boot-starter-web).
 configurations {
     clientImplementation.extendsFrom implementation
+    bddImplementation
+    bddRuntimeOnly
 }
 
 openApiGenerate {
@@ -220,6 +227,14 @@ jar {
 }
 
 dependencies {
+    // JBehave BDD tests — black-box, run against a live app outside the check lifecycle.
+    // JBehave 5.0 is JUnit 5-native (JupiterStories); no JUnit 4 / vintage engine needed.
+    bddImplementation "org.jbehave:jbehave-core:$jbehaveVersion"
+    bddImplementation "org.junit.jupiter:junit-jupiter-api"
+    bddImplementation "com.fasterxml.jackson.core:jackson-databind"
+    bddRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
+    bddRuntimeOnly "org.junit.platform:junit-platform-launcher"
+
     implementation "org.projectlombok:lombok:$lombokVersion"
     annotationProcessor "org.projectlombok:lombok:$lombokVersion"
 
@@ -314,6 +329,22 @@ tasks.register('migrationCompatTest', Test) {
     useJUnitPlatform()
     testLogging {
         events "skipped", "failed"
+        showStandardStreams = true
+    }
+}
+
+// Black-box BDD tests using JBehave. Requires a running app (make deploy).
+// Not wired into check — run explicitly with: ./gradlew bddTest [-PbddBaseUrl=http://...].
+tasks.register('bddTest', Test) {
+    description = 'JBehave BDD tests against a running app. Start it first with: make deploy'
+    group = 'verification'
+    testClassesDirs = sourceSets.bdd.output.classesDirs
+    classpath = sourceSets.bdd.runtimeClasspath
+    useJUnitPlatform()
+    systemProperty 'bddBaseUrl', project.findProperty('bddBaseUrl') ?: 'http://localhost:8080'
+    jvmArgs '-Xmx256m', '-XX:MaxMetaspaceSize=256m'
+    testLogging {
+        events 'passed', 'skipped', 'failed'
         showStandardStreams = true
     }
 }

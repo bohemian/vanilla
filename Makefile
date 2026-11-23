@@ -5,7 +5,7 @@ GRADLEW = ./gradlew
 KEEP_DAYS ?= 1
 VERSION ?= local
 
-.PHONY: all build clean run test format review hooks audit mutate clean-gh-runs deploy setup branch release
+.PHONY: all build clean run test bdd format review hooks audit mutate clean-gh-runs deploy setup branch release
 
 # Ensure a brew-installable tool is present; installs it automatically if missing.
 # Usage: $(call ensure-brew,executable,brew-package)
@@ -91,6 +91,13 @@ run:
 
 test:
 	$(GRADLEW) test
+
+# Run JBehave BDD tests against a running app.
+# The app must already be running: make deploy (in a separate terminal).
+# Override the target URL with: make bdd BDD_BASE_URL=http://host:8080
+BDD_BASE_URL ?= http://localhost:8080
+bdd:
+	$(GRADLEW) bddTest -PbddBaseUrl=$(BDD_BASE_URL)
 
 review:
 	@./scripts/pr-review.sh
