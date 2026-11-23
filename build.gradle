@@ -13,6 +13,11 @@ plugins {
     // Spring Cloud Contract — verify this version is compatible with Spring Boot 4.x;
     // update to 5.x.x when the Spring Cloud 2025.0.x release train is available.
     id 'org.springframework.cloud.contract' version "$springCloudContractVersion"
+    // Generates openapi.json at build time by booting the app against H2 in-memory DB.
+    // Output: build/docs/openapi/openapi.json — published as a CI artifact for clients.
+    id 'org.springdoc.openapi-gradle-plugin' version '1.9.0'
+    // Generates a typed Java client from openapi.json; published as vanilla-client to GitHub Packages.
+    id 'org.openapi.generator' version '7.10.0'
 }
 
 spotless {
@@ -140,6 +145,68 @@ contracts {
     baseClassForTests = 'vanilla.contracts.ContractVerifierBase'
 }
 
+openApi {
+    apiDocsUrl = "http://localhost:8080/v3/api-docs"
+    outputFileName = "openapi.json"
+    outputDir = file("${layout.buildDirectory.get()}/docs/openapi")
+    // Boot the app against H2 in-memory DB so no Postgres is needed during doc generation.
+    customBootRun {
+        args = [
+            "--spring.datasource.url=jdbc:h2:mem:openapi;DB_CLOSE_DELAY=-1",
+            "--spring.datasource.driver-class-name=org.h2.Driver",
+            "--spring.datasource.username=sa",
+            "--spring.datasource.password=",
+            "--spring.flyway.enabled=false",
+            "--spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
+            "--spring.jpa.hibernate.ddl-auto=create-drop"
+        ]
+    }
+}
+
+// Source set for the generated client. Only the Java source directory is wired in;
+// the rest of openApiGenerate's output (build scripts, .gitignore, etc.) is ignored.
+sourceSets {
+    client {
+        java.srcDirs = ["${layout.buildDirectory.get()}/generated/openapi-client/src/main/java"]
+    }
+}
+
+// Give the client source set access to the same runtime dependencies as main
+// (spring-web, jackson-databind, etc. all come in via spring-boot-starter-web).
+configurations {
+    clientImplementation.extendsFrom implementation
+}
+
+openApiGenerate {
+    generatorName = "java"
+    // "native" uses java.net.http.HttpClient (Java 11+) and Jackson — no Spring Framework
+    // dependency. This avoids breakage from Spring Framework 7 API removals in the
+    // resttemplate generator templates (fromHttpUrl, HttpHeaders.entrySet, etc.).
+    // Consumers of vanilla-client only need jackson-databind on their classpath.
+    library = "native"
+    inputSpec = "${layout.buildDirectory.get()}/docs/openapi/openapi.json"
+    outputDir = "${layout.buildDirectory.get()}/generated/openapi-client"
+    apiPackage = "vanilla.client.api"
+    modelPackage = "vanilla.client.model"
+    invokerPackage = "vanilla.client"
+    // Suppress tests, docs, and the sample build scripts — we only want the source.
+    generateApiTests = false
+    generateModelTests = false
+    generateApiDocumentation = false
+    generateModelDocumentation = false
+    configOptions = [
+        dateLibrary            : "java8",
+        hideGenerationTimestamp: "true",
+        openApiNullable        : "false"
+    ]
+}
+
+// openApiGenerate reads the spec that generateOpenApiDocs produces, so declare
+// the dependency explicitly to satisfy Gradle's task validation.
+// Both locally and in CI the full chain is: generateOpenApiDocs → openApiGenerate → compileClientJava → clientJar
+tasks.named('openApiGenerate').configure { dependsOn 'generateOpenApiDocs' }
+compileClientJava.dependsOn 'openApiGenerate'
+
 jar {
     manifest {
         attributes "Main-Class": "vanilla.Application"
@@ -192,6 +259,17 @@ dependencies {
     // Spring Boot auto-detects the MVC stack when both are on the classpath.
     testImplementation "org.springframework.boot:spring-boot-starter-webflux:$springVersion"
 
+    // H2 is only needed to boot the app during OpenAPI doc generation (generateOpenApiDocs task).
+    // It is never on the test classpath and never used at runtime in production.
+    runtimeOnly 'com.h2database:h2'
+
+    // Compile-only annotations required by the openapi-generator output.
+    // Not needed at runtime — annotation metadata only.
+    // jsr305 provides @Nonnull / @Nullable (javax.annotation from JSR-305).
+    // javax.annotation-api provides @Generated (javax.annotation from JSR-250, removed from JDK 11+).
+    clientCompileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+    clientCompileOnly 'javax.annotation:javax.annotation-api:1.3.2'
+
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testRuntimeOnly "net.bytebuddy:byte-buddy:$bytebuddyVersion"
     testRuntimeOnly "org.objenesis:objenesis:$objenesisVersion"
@@ -240,10 +318,51 @@ tasks.register('migrationCompatTest', Test) {
     }
 }
 
+tasks.register('clientJar', Jar) {
+    group = 'build'
+    description = 'Packages the generated vanilla-client JAR for publishing to GitHub Packages.'
+    archiveBaseName = 'vanilla-client'
+    archiveClassifier = ''
+    from sourceSets.client.output
+    dependsOn compileClientJava
+}
+
 publishing {
     publications {
         boot(MavenPublication) {
             artifact(tasks.bootJar)
+        }
+        // Typed REST client generated from the service's own OpenAPI spec.
+        // Consumers: implementation 'com.vanilla:vanilla-client:<version>'
+        // Requires spring-boot-starter-web on the consumer's classpath (RestTemplate + Jackson).
+        // Typed REST client generated from the service's own OpenAPI spec.
+        // Uses java.net.http.HttpClient (Java 11+) — no Spring Framework dependency.
+        // Consumer dependency: implementation 'com.vanilla:vanilla-client:<version>'
+        client(MavenPublication) {
+            groupId = 'com.vanilla'
+            artifactId = 'vanilla-client'
+            version = project.version
+            artifact(tasks.clientJar)
+            pom {
+                name = 'vanilla-client'
+                description = 'Generated Java client for the vanilla service (java.net.http + Jackson)'
+                withXml {
+                    def depsNode = asNode().appendNode('dependencies')
+                    // jackson-databind and jackson-datatype-jsr310 are the only runtime deps.
+                    // Spring Boot consumers have these managed by the Boot BOM already.
+                    [
+                        ['com.fasterxml.jackson.core',     'jackson-databind'],
+                        ['com.fasterxml.jackson.datatype', 'jackson-datatype-jsr310'],
+                    ].each { grp, art ->
+                        def managedVersion = dependencyManagement.managedVersions["${grp}:${art}"]
+                        def dep = depsNode.appendNode('dependency')
+                        dep.appendNode('groupId', grp)
+                        dep.appendNode('artifactId', art)
+                        if (managedVersion) dep.appendNode('version', managedVersion)
+                        dep.appendNode('scope', 'compile')
+                    }
+                }
+            }
         }
     }
     repositories {

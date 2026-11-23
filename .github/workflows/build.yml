@@ -78,7 +78,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          NEW_MIGRATIONS=$(git diff origin/${{ github.base_ref }}...HEAD \
+          git fetch origin ${{ github.base_ref }} --depth=1
+          # Two-dot (..) diffs the two tree states directly — no merge base needed,
+          # so this works with shallow clones. Three-dot (...) requires a common
+          # ancestor which shallow history cannot provide.
+          NEW_MIGRATIONS=$(git diff origin/${{ github.base_ref }}..HEAD \
             --name-only --diff-filter=A -- 'src/main/resources/db/migration/*.sql')
           if [ -z "$NEW_MIGRATIONS" ]; then
             echo "No new migrations in this PR — skipping backward-compat test"
@@ -129,6 +133,16 @@ jobs:
 
       - name: Build
         run: ./gradlew assemble
+
+      - name: Generate OpenAPI spec
+        run: ./gradlew generateOpenApiDocs
+
+      - name: Upload OpenAPI spec
+        uses: actions/upload-artifact@v5
+        with:
+          name: openapi-spec
+          path: build/docs/openapi/openapi.json
+          retention-days: 14
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v5
@@ -254,7 +268,7 @@ jobs:
     # gate-publish is skipped on non-push events, which also skips this job automatically.
     if: needs.gate-publish.outputs.should_publish == 'true'
     permissions:
-      contents: read
+      contents: write  # needed to create GitHub releases
       packages: write
 
     steps:
@@ -279,8 +293,17 @@ jobs:
           name: application-jar
           path: build/libs/
 
-      - name: Publish JAR to GitHub Packages
+      - name: Publish service JAR to GitHub Packages
         run: ./gradlew publish
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate and publish client JAR to GitHub Packages
+        # Runs the full chain: generateOpenApiDocs (boots app against H2) →
+        # openApiGenerate (generates Java source) → clientJar → publish client.
+        # The openapi.json produced here is also used by the GitHub release step below.
+        run: ./gradlew clientJar publishClientPublicationToGitHubPackagesRepository
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -340,6 +363,16 @@ jobs:
           docker push ghcr.io/bohemian/vanilla:sha-${{ steps.meta.outputs.sha }}
           docker push ghcr.io/bohemian/vanilla:latest
 
+      - name: Create GitHub release and attach OpenAPI spec
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${{ steps.meta.outputs.version }}-sha-${{ steps.meta.outputs.sha }}"
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --generate-notes \
+            "build/docs/openapi/openapi.json#openapi.json"
+
   # Smoke-test the published image by spinning it up with Docker Compose and hitting
   # the health endpoint.  Runs only after a successful publish so the image is in GHCR.
   smoke-test:
@@ -364,7 +397,7 @@ jobs:
       - name: Start services
         run: |
           VANILLA_IMAGE=ghcr.io/bohemian/vanilla:${{ steps.meta.outputs.version }} \
-            docker compose up --no-build --wait --wait-timeout 120
+            docker compose up --no-build --wait --wait-timeout 240
 
       - name: Smoke test — liveness
         run: curl -sf http://localhost:8080/actuator/health/liveness

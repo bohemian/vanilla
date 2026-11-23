@@ -5,7 +5,7 @@ GRADLEW = ./gradlew
 KEEP_DAYS ?= 1
 VERSION ?= local
 
-.PHONY: all build clean run test format review hooks audit mutate clean-gh-runs deploy
+.PHONY: all build clean run test format review hooks audit mutate clean-gh-runs deploy setup
 
 # Ensure a brew-installable tool is present; installs it automatically if missing.
 # Usage: $(call ensure-brew,executable,brew-package)
@@ -13,6 +13,27 @@ define ensure-brew
 @command -v $(1) >/dev/null 2>&1 \
   || { echo "Installing $(2) via Homebrew..."; brew install $(2); }
 endef
+
+# Install all dependencies and activate git hooks.
+# Requires Homebrew (https://brew.sh). Xcode Command Line Tools must be
+# installed first manually: xcode-select --install
+setup:
+	@echo "==> Installing dependencies via Homebrew..."
+	@command -v docker >/dev/null 2>&1 \
+	  || { echo "Installing Docker..."; brew install --cask docker; }
+	@/usr/libexec/java_home -v 21 >/dev/null 2>&1 \
+	  || { echo "Installing Java 21 (Temurin)..."; brew install --cask temurin@21; }
+	$(call ensure-brew,gh,gh)
+	$(call ensure-brew,jq,jq)
+	@if ! grep -q 'JAVA_HOME' ~/.zprofile 2>/dev/null; then \
+	  echo "export JAVA_HOME=\$$(/usr/libexec/java_home)" >> ~/.zprofile; \
+	  echo "✅ Added JAVA_HOME to ~/.zprofile"; \
+	fi
+	$(MAKE) hooks
+	@echo ""
+	@echo "✅ Setup complete."
+	@echo "   Restart your terminal (or: source ~/.zprofile) for JAVA_HOME to take effect."
+	@echo "   Then run: make deploy"
 
 all: build
 
