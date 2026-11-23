@@ -394,7 +394,7 @@ jobs:
       - name: Start services
         run: |
           VANILLA_IMAGE=ghcr.io/bohemian/vanilla:${{ steps.meta.outputs.version }} \
-            docker compose up --no-build --wait --wait-timeout 120
+            docker compose up --no-build --wait --wait-timeout 240
 
       - name: Smoke test — liveness
         run: curl -sf http://localhost:8080/actuator/health/liveness
