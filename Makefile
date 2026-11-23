@@ -39,19 +39,23 @@ setup:
 # Branch types are read from .branch-types (format: type|description).
 # Paste a Jira/Linear title directly — spaces and special chars are converted to hyphens.
 branch:
-	@[ -f .branch-types ] || { echo "❌ .branch-types not found"; exit 1; }; \
+	@if [ -f .branch-types ]; then \
+	  DATA=$$(cat .branch-types); \
+	else \
+	  DATA=$$(printf 'feat|new feature\nfix|bug fix\nchore|maintenance (deps, docs, config)\nhotfix|urgent production fix\nai|AI-assisted change'); \
+	fi; \
 	echo ""; \
 	echo "Create a conventional branch"; \
 	echo ""; \
-	awk -F'|' '/^[[:space:]]*#/{next} /^[[:space:]]*$$/{next} \
-	  {i++; printf "  %d) %-8s — %s\n", i, $$1, $$2}' .branch-types; \
-	COUNT=$$(awk -F'|' '/^[[:space:]]*#/{next} /^[[:space:]]*$$/{next} {i++} END{print i+0}' .branch-types); \
+	printf '%s\n' "$$DATA" | awk -F'|' '/^[[:space:]]*#/{next} /^[[:space:]]*$$/{next} \
+	  {i++; printf "  %d) %-8s — %s\n", i, $$1, $$2}'; \
+	COUNT=$$(printf '%s\n' "$$DATA" | awk -F'|' '/^[[:space:]]*#/{next} /^[[:space:]]*$$/{next} {i++} END{print i+0}'); \
 	echo ""; \
 	printf "Type [1-$$COUNT]: "; read -r n </dev/tty; \
 	echo "$$n" | grep -qE '^[0-9]+$$' || { echo "Invalid selection '$$n'" >&2; exit 1; }; \
 	[ "$$n" -ge 1 ] && [ "$$n" -le "$$COUNT" ] \
 	  || { echo "Invalid selection '$$n'" >&2; exit 1; }; \
-	type=$$(awk -F'|' -v sel="$$n" '/^[[:space:]]*#/{next} /^[[:space:]]*$$/{next} {i++} i==sel{print $$1; exit}' .branch-types); \
+	type=$$(printf '%s\n' "$$DATA" | awk -F'|' -v sel="$$n" '/^[[:space:]]*#/{next} /^[[:space:]]*$$/{next} {i++} i==sel{print $$1; exit}'); \
 	echo ""; \
 	printf "Description: "; read -r desc </dev/tty; \
 	slug=$$(echo "$$desc" \
