@@ -130,6 +130,16 @@ jobs:
       - name: Build
         run: ./gradlew assemble
 
+      - name: Generate OpenAPI spec
+        run: ./gradlew generateOpenApiDocs
+
+      - name: Upload OpenAPI spec
+        uses: actions/upload-artifact@v5
+        with:
+          name: openapi-spec
+          path: build/docs/openapi/openapi.json
+          retention-days: 14
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v5
         with:
