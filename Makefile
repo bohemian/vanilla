@@ -5,7 +5,7 @@ GRADLEW = ./gradlew
 KEEP_DAYS ?= 1
 VERSION ?= local
 
-.PHONY: all build clean run test format review hooks audit mutate clean-gh-runs deploy setup
+.PHONY: all build clean run test format review hooks audit mutate clean-gh-runs deploy setup branch
 
 # Ensure a brew-installable tool is present; installs it automatically if missing.
 # Usage: $(call ensure-brew,executable,brew-package)
@@ -34,6 +34,42 @@ setup:
 	@echo "✅ Setup complete."
 	@echo "   Restart your terminal (or: source ~/.zprofile) for JAVA_HOME to take effect."
 	@echo "   Then run: make deploy"
+
+# Interactive prompt to create a Conventional Branch (https://conventionalbranch.org).
+# Paste a Jira/Linear title directly — spaces and special chars are converted to hyphens.
+branch:
+	@echo ""; \
+	echo "Create a conventional branch"; \
+	echo ""; \
+	echo "  1) feat    — new feature"; \
+	echo "  2) fix     — bug fix"; \
+	echo "  3) chore   — maintenance (deps, docs, config)"; \
+	echo "  4) hotfix  — urgent production fix"; \
+	echo "  5) release — release preparation"; \
+	echo "  6) ai      — AI-assisted change"; \
+	echo ""; \
+	printf "Type [1-6]: "; read -r n </dev/tty; \
+	case $$n in \
+	  1) type=feat    ;; \
+	  2) type=fix     ;; \
+	  3) type=chore   ;; \
+	  4) type=hotfix  ;; \
+	  5) type=release ;; \
+	  6) type=ai      ;; \
+	  *) echo "Invalid selection '$$n'" >&2; exit 1 ;; \
+	esac; \
+	echo ""; \
+	printf "Description: "; read -r desc </dev/tty; \
+	slug=$$(echo "$$desc" \
+	  | tr '[:upper:]' '[:lower:]' \
+	  | tr -cs 'a-z0-9.' '-' \
+	  | sed 's/^[-.]*//; s/[-.]*$$//'); \
+	[ -z "$$slug" ] && echo "Description cannot be empty" >&2 && exit 1; \
+	branch="$$type/$$slug"; \
+	echo ""; \
+	printf "Create branch \"%s\"? [Y/n] " "$$branch"; read -r confirm </dev/tty; \
+	case "$$confirm" in [nN]*) echo "Aborted." && exit 0 ;; esac; \
+	git checkout -b "$$branch"
 
 all: build
 
