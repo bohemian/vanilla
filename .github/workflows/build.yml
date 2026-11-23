@@ -289,14 +289,17 @@ jobs:
           name: application-jar
           path: build/libs/
 
-      - name: Download OpenAPI spec
-        uses: actions/download-artifact@v5
-        with:
-          name: openapi-spec
-          path: build/docs/openapi/
-
-      - name: Publish JAR to GitHub Packages
+      - name: Publish service JAR to GitHub Packages
         run: ./gradlew publish
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate and publish client JAR to GitHub Packages
+        # Runs the full chain: generateOpenApiDocs (boots app against H2) →
+        # openApiGenerate (generates Java source) → clientJar → publish client.
+        # The openapi.json produced here is also used by the GitHub release step below.
+        run: ./gradlew clientJar publishClientPublicationToGitHubPackagesRepository
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
