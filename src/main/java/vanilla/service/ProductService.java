@@ -34,4 +34,31 @@ public class ProductService {
         .map(Product::getCode)
         .collect(Collectors.toList());
   }
+
+  @Transactional
+  public Product createProduct(String code, String name, int priceCents) {
+    Product product = new Product();
+    product.setCode(code);
+    product.setName(name);
+    product.setPriceCents(priceCents);
+    return productRepository.save(product);
+  }
+
+  @Transactional
+  public Optional<Product> updateProduct(String code, String name, int priceCents) {
+    return productRepository
+        .findByCode(code)
+        .map(
+            p -> {
+              p.setName(name);
+              p.setPriceCents(priceCents);
+              return productRepository.save(p);
+            });
+  }
+
+  @Transactional
+  public boolean deleteProduct(String code) {
+    productRepository.deleteHistoryByProductCode(code);
+    return productRepository.deleteByCodeNative(code) > 0;
+  }
 }
