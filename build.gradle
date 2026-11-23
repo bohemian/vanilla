@@ -174,7 +174,6 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test:$springVersion") {
 //        exclude group: 'org.mockito', module: 'mockito-core'
     }
-    testImplementation "org.mockito:mockito-inline:5.2.0"
     testImplementation "org.springframework.boot:spring-boot-testcontainers:$springVersion"
 //    testImplementation "org.testcontainers:testcontainers-junit-jupiter:2.0.3"
     testImplementation "org.testcontainers:testcontainers:2.0.3"
@@ -201,8 +200,7 @@ dependencies {
 }
 
 test {
-    jvmArgs "-javaagent:${configurations.testRuntimeClasspath.find { it.name.contains('mockito-core') }}",
-            '-Xshare:off',
+    jvmArgs '-Xshare:off',
             '-Xmx256m',
             '-XX:MaxMetaspaceSize=384m'
     useJUnitPlatform()
@@ -232,8 +230,7 @@ tasks.register('migrationCompatTest', Test) {
         includeTestsMatching '*MigrationBackwardCompatSpec'
     }
 
-    jvmArgs "-javaagent:${configurations.testRuntimeClasspath.find { it.name.contains('mockito-core') }}",
-            '-Xshare:off',
+    jvmArgs '-Xshare:off',
             '-Xmx256m',
             '-XX:MaxMetaspaceSize=384m'
     useJUnitPlatform()
