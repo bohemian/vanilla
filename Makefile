@@ -60,9 +60,9 @@ package:
 
 # Activate hooks and ensure all hook scripts are executable
 hooks:
-	chmod +x .githooks/pre-commit .githooks/commit-msg .githooks/pre-push .githooks/post-commit
+	chmod +x .githooks/pre-commit .githooks/commit-msg .githooks/pre-push .githooks/post-commit .githooks/post-checkout
 	git config core.hooksPath .githooks
-	@echo "✅ Git hooks activated (pre-commit, commit-msg, pre-push, post-commit)"
+	@echo "✅ Git hooks activated (pre-commit, commit-msg, pre-push, post-commit, post-checkout)"
 
 # Run OWASP dependency vulnerability scan (slow — downloads NVD data)
 audit:

@@ -7,26 +7,6 @@ set -euo pipefail
 # Skip in CI — the pipeline runs tests itself
 [[ "${CI:-}" == "true" ]] && exit 0
 
-# Validate branch name against Conventional Branch spec v1.1.0
-# https://conventionalbranch.org — regex from spec.json
-BRANCH=$(git rev-parse --abbrev-ref HEAD)
-# ERE equivalent of spec.json grammar.regex (non-capturing groups → capturing groups,
-# which is fine here since we only care about the match result, not the captures).
-CB_REGEX='^(main|master|develop|(feature|feat|bugfix|fix|hotfix|release|chore|ai|copilot|cursor|claude|codex)/[a-z0-9]+(\.[a-z0-9]+)*(-[a-z0-9]+(\.[a-z0-9]+)*)*)$'
-if ! echo "$BRANCH" | grep -qE "$CB_REGEX"; then
-  echo ""
-  echo "❌ Branch name '$BRANCH' does not follow Conventional Branch (https://conventionalbranch.org)"
-  echo ""
-  echo "   Format:  <type>/<description>"
-  echo "   Types:   feature (feat)  bugfix (fix)  hotfix  release  chore"
-  echo "            ai  claude  codex  copilot  cursor"
-  echo "   Rules:   lowercase, hyphens between words, dots allowed for versions"
-  echo ""
-  echo "   Examples: feature/add-login  bugfix/fix-npe  release/v1.2.0  chore/update-deps"
-  echo ""
-  echo "   Bypass with: git push --no-verify"
-  exit 1
-fi
 
 # Check Docker is available for Testcontainers
 if ! docker info &>/dev/null 2>&1; then

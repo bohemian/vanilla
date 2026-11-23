@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Warn immediately if the checked-out branch name does not follow Conventional Branch.
+# Fires on: git checkout -b <name>  /  git switch -c <name>  /  git checkout <name>
+#
+# Git passes three arguments:
+#   $1 = previous HEAD (SHA)
+#   $2 = new HEAD (SHA)
+#   $3 = 1 for branch checkout, 0 for file checkout
+#
+# post-checkout cannot prevent a checkout — it always exits 0 so git is unaffected.
+# The user can rename the branch immediately: git branch -m <new-name>
+
+[[ "$3" != "1" ]] && exit 0  # file checkout (git checkout -- <path>) — nothing to check
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+# Trunk branches and detached HEAD are always fine
+[[ "$BRANCH" =~ ^(main|master|develop|HEAD)$ ]] && exit 0
+
+# ERE equivalent of Conventional Branch v1.1.0 grammar.regex from spec.json
+# https://conventionalbranch.org/spec.json
+CB_REGEX='^(main|master|develop|(feature|feat|bugfix|fix|hotfix|release|chore|ai|copilot|cursor|claude|codex)/[a-z0-9]+(\.[a-z0-9]+)*(-[a-z0-9]+(\.[a-z0-9]+)*)*)$'
+
+if ! echo "$BRANCH" | grep -qE "$CB_REGEX"; then
+  echo ""
+  echo "⚠️  Branch name '$BRANCH' does not follow Conventional Branch."
+  echo "   https://conventionalbranch.org"
+  echo ""
+  echo "   Format:  <type>/<description>"
+  echo "   Types:   feature (feat)  bugfix (fix)  hotfix  release  chore"
+  echo "            ai  claude  codex  copilot  cursor"
+  echo "   Rules:   lowercase, hyphens between words, dots for versions"
+  echo ""
+  echo "   Rename:  git branch -m <new-name>"
+  echo ""
+fi
+
+exit 0
