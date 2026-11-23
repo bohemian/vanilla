@@ -41,21 +41,19 @@ branch:
 	@echo ""; \
 	echo "Create a conventional branch"; \
 	echo ""; \
-	echo "  1) feat    — new feature"; \
-	echo "  2) fix     — bug fix"; \
-	echo "  3) chore   — maintenance (deps, docs, config)"; \
-	echo "  4) hotfix  — urgent production fix"; \
-	echo "  5) release — release preparation"; \
-	echo "  6) ai      — AI-assisted change"; \
+	echo "  1) feat   — new feature"; \
+	echo "  2) fix    — bug fix"; \
+	echo "  3) chore  — maintenance (deps, docs, config)"; \
+	echo "  4) hotfix — urgent production fix"; \
+	echo "  5) ai     — AI-assisted change"; \
 	echo ""; \
-	printf "Type [1-6]: "; read -r n </dev/tty; \
+	printf "Type [1-5]: "; read -r n </dev/tty; \
 	case $$n in \
-	  1) type=feat    ;; \
-	  2) type=fix     ;; \
-	  3) type=chore   ;; \
-	  4) type=hotfix  ;; \
-	  5) type=release ;; \
-	  6) type=ai      ;; \
+	  1) type=feat   ;; \
+	  2) type=fix    ;; \
+	  3) type=chore  ;; \
+	  4) type=hotfix ;; \
+	  5) type=ai     ;; \
 	  *) echo "Invalid selection '$$n'" >&2; exit 1 ;; \
 	esac; \
 	echo ""; \

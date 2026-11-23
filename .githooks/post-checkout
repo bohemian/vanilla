@@ -19,7 +19,7 @@ BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 # ERE equivalent of Conventional Branch v1.1.0 grammar.regex from spec.json
 # https://conventionalbranch.org/spec.json
-CB_REGEX='^(main|master|develop|(feature|feat|bugfix|fix|hotfix|release|chore|ai|copilot|cursor|claude|codex)/[a-z0-9]+(\.[a-z0-9]+)*(-[a-z0-9]+(\.[a-z0-9]+)*)*)$'
+CB_REGEX='^(main|master|develop|(feature|feat|bugfix|fix|hotfix|chore|ai|copilot|cursor|claude|codex)/[a-z0-9]+(\.[a-z0-9]+)*(-[a-z0-9]+(\.[a-z0-9]+)*)*)$'
 
 if ! echo "$BRANCH" | grep -qE "$CB_REGEX"; then
   echo ""
@@ -27,7 +27,7 @@ if ! echo "$BRANCH" | grep -qE "$CB_REGEX"; then
   echo "   https://conventionalbranch.org"
   echo ""
   echo "   Format:  <type>/<description>"
-  echo "   Types:   feature (feat)  bugfix (fix)  hotfix  release  chore"
+  echo "   Types:   feature (feat)  bugfix (fix)  hotfix  chore"
   echo "            ai  claude  codex  copilot  cursor"
   echo "   Rules:   lowercase, hyphens between words, dots for versions"
   echo ""
