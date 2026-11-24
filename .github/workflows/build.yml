@@ -309,7 +309,7 @@ jobs:
           echo "should_publish=$([ "$parents" -gt 1 ] && echo true || echo false)" >> $GITHUB_OUTPUT
 
   publish:
-    needs: [build, gate-publish]
+    needs: [build, bdd-test, gate-publish]
     runs-on: ubuntu-latest
     # gate-publish is skipped on non-push events, which also skips this job automatically.
     if: needs.gate-publish.outputs.should_publish == 'true'

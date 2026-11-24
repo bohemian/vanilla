@@ -1,6 +1,7 @@
 package vanilla.bdd;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -106,12 +107,17 @@ public class ProductCrudSteps {
 
   @Then("the response status is $status")
   public void responseStatusIs(int status) {
+    assertNotNull(lastResponse, "No HTTP response recorded — missing @When step before this @Then");
     assertEquals(status, lastResponse.statusCode());
   }
 
   @Then("the response contains a product with code $code")
   public void responseContainsProduct(String code) throws Exception {
+    assertNotNull(lastResponse, "No HTTP response recorded — missing @When step before this @Then");
+    assertNotNull(lastResponse.body(), "Response body is null");
     JsonNode json = MAPPER.readTree(lastResponse.body());
-    assertEquals(code, json.get("code").asText());
+    JsonNode codeNode = json.get("code");
+    assertNotNull(codeNode, "Missing 'code' field in response: " + lastResponse.body());
+    assertEquals(code, codeNode.asText());
   }
 }

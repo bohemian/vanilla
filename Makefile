@@ -92,12 +92,13 @@ run:
 test:
 	$(GRADLEW) test
 
-# Run JBehave BDD tests against a running app.
-# The app must already be running: make deploy (in a separate terminal).
-# Override the target URL with: make bdd BDD_BASE_URL=http://host:8080
-BDD_BASE_URL ?= http://localhost:8080
+# Build the app, start it in Docker, run JBehave BDD tests, then tear down.
+# Self-contained: no running app required beforehand.
 bdd:
-	$(GRADLEW) bddTest -PbddBaseUrl=$(BDD_BASE_URL)
+	$(GRADLEW) bootJar
+	docker build -t vanilla:bdd .
+	VANILLA_IMAGE=vanilla:bdd docker compose up --no-build --wait --wait-timeout 120
+	$(GRADLEW) bddTest; EXIT=$$?; docker compose down; exit $$EXIT
 
 review:
 	@./scripts/pr-review.sh
