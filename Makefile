@@ -90,14 +90,19 @@ run:
 	@java -jar $$(find . -name "vanilla-*.jar") --spring.profiles.active=local
 
 test:
+	@echo "==> Running unit tests"
 	$(GRADLEW) test
 
 # Build the app, start it in Docker, run JBehave BDD tests, then tear down.
 # Self-contained: no running app required beforehand.
 bdd:
+	@echo "==> Building JAR"
 	$(GRADLEW) bootJar
+	@echo "==> Building Docker image"
 	docker build -t vanilla:bdd .
+	@echo "==> Starting services"
 	VANILLA_IMAGE=vanilla:bdd docker compose up --no-build --wait --wait-timeout 120
+	@echo "==> Running BDD tests"
 	$(GRADLEW) bddTest; EXIT=$$?; docker compose down; exit $$EXIT
 
 review:
