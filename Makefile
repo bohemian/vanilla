@@ -103,6 +103,7 @@ run:
 test:
 	@echo "==> Running unit tests"
 	@$(GRADLEW) test $(GRADLE_QUIET)
+	$(MAKE) bdd
 
 # Build the app, start it in Docker, run JBehave BDD tests, then tear down.
 # Self-contained: no running app required beforehand.
