@@ -108,6 +108,8 @@ test:
 # Build the app, start it in Docker, run JBehave BDD tests, then tear down.
 # Self-contained: no running app required beforehand.
 bdd:
+	@echo "==> Tearing down any existing services"
+	docker compose down >/dev/null 2>&1; true
 	@echo "==> Building JAR"
 	@$(GRADLEW) bootJar $(GRADLE_QUIET)
 	@echo "==> Building Docker image"
