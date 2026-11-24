@@ -47,5 +47,5 @@ services:
       test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health/readiness || exit 1"]
       interval: 5s
       timeout: 5s
-      retries: 24  # up to 2 minutes for Spring Boot to start
-      start_period: 10s
+      retries: 12  # up to 1 minute of retries after start_period
+      start_period: 60s

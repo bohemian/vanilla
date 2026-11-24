@@ -196,7 +196,7 @@ jobs:
         run: docker build -t vanilla:bdd .
 
       - name: Start services
-        run: VANILLA_IMAGE=vanilla:bdd docker compose up --no-build --wait --wait-timeout 240
+        run: VANILLA_IMAGE=vanilla:bdd docker compose up --no-build --wait --wait-timeout 180
 
       - name: Run BDD tests
         run: ./gradlew bddTest
