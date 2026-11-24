@@ -1,5 +1,9 @@
-SHELL := /bin/bash
+SHELL := /bin/bash -o pipefail
 GRADLEW = ./gradlew
+
+# Filter noisy Gradle informational lines (daemon lifecycle, deprecation hints, incubating notices).
+# pipefail above ensures the pipeline exit code reflects Gradle's exit code, not grep's.
+GRADLE_QUIET = 2>&1 | grep -Ev "^To honour the JVM|^Daemon will be stopped|\[Incubating\]|^Deprecated Gradle|--warning-mode all|^Consider enabling configuration cache|^For more on this"
 
 # Target-specific defaults
 KEEP_DAYS ?= 1
@@ -82,15 +86,15 @@ all: build
 
 format:
 	@echo "==> Applying Spotless formatting"
-	$(GRADLEW) spotlessApply
+	@$(GRADLEW) spotlessApply $(GRADLE_QUIET)
 
 build: format
 	@echo "==> Running full build"
-	$(GRADLEW) build
+	@$(GRADLEW) build $(GRADLE_QUIET)
 
 clean:
 	@echo "==> Cleaning build outputs"
-	$(GRADLEW) clean
+	@$(GRADLEW) clean $(GRADLE_QUIET)
 
 run:
 	@echo "==> Starting app"
@@ -98,19 +102,19 @@ run:
 
 test:
 	@echo "==> Running unit tests"
-	$(GRADLEW) test
+	@$(GRADLEW) test $(GRADLE_QUIET)
 
 # Build the app, start it in Docker, run JBehave BDD tests, then tear down.
 # Self-contained: no running app required beforehand.
 bdd:
 	@echo "==> Building JAR"
-	$(GRADLEW) bootJar
+	@$(GRADLEW) bootJar $(GRADLE_QUIET)
 	@echo "==> Building Docker image"
-	docker build -t vanilla:bdd .
+	docker build -t vanilla:bdd . -q
 	@echo "==> Starting services"
-	VANILLA_IMAGE=vanilla:bdd docker compose up --no-build --wait --wait-timeout 120
+	VANILLA_IMAGE=vanilla:bdd docker compose up --no-build --wait --wait-timeout 120 -q
 	@echo "==> Running BDD tests"
-	$(GRADLEW) bddTest; EXIT=$$?; docker compose down; exit $$EXIT
+	@$(GRADLEW) bddTest $(GRADLE_QUIET); EXIT=$$?; docker compose down -q; exit $$EXIT
 
 review:
 	@echo "==> Running local PR review"
@@ -130,12 +134,12 @@ hooks:
 # Run OWASP dependency vulnerability scan (slow — downloads NVD data)
 audit:
 	@echo "==> Running OWASP dependency vulnerability scan"
-	$(GRADLEW) dependencyCheckAnalyze
+	@$(GRADLEW) dependencyCheckAnalyze $(GRADLE_QUIET)
 
 # Run PIT mutation testing (slow — reruns tests with code mutations)
 mutate:
 	@echo "==> Running PIT mutation tests"
-	$(GRADLEW) pitest
+	@$(GRADLEW) pitest $(GRADLE_QUIET)
 
 # Deploy locally using Docker Compose.
 # VERSION=local (default): builds the JAR and Docker image locally.
@@ -145,7 +149,7 @@ mutate:
 deploy:
 	@if [ "$(VERSION)" = "local" ]; then \
 	    echo "==> Building JAR and Docker image"; \
-	    $(GRADLEW) bootJar; \
+	    $(GRADLEW) bootJar $(GRADLE_QUIET); \
 	    echo "==> Starting services (local build)"; \
 	    VANILLA_IMAGE=vanilla:local docker compose up --build --wait; \
 	  else \
