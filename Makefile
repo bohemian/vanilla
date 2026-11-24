@@ -18,17 +18,19 @@ endef
 # Requires Homebrew (https://brew.sh). Xcode Command Line Tools must be
 # installed first manually: xcode-select --install
 setup:
-	@echo "==> Installing dependencies via Homebrew..."
+	@echo "==> Checking dependencies"
 	@command -v docker >/dev/null 2>&1 \
-	  || { echo "Installing Docker..."; brew install --cask docker; }
+	  || { echo "    Installing Docker..."; brew install --cask docker; }
 	@/usr/libexec/java_home -v 21 >/dev/null 2>&1 \
-	  || { echo "Installing Java 21 (Temurin)..."; brew install --cask temurin@21; }
+	  || { echo "    Installing Java 21 (Temurin)..."; brew install --cask temurin@21; }
 	$(call ensure-brew,gh,gh)
 	$(call ensure-brew,jq,jq)
+	@echo "==> Configuring JAVA_HOME"
 	@if ! grep -q 'JAVA_HOME' ~/.zprofile 2>/dev/null; then \
 	  echo "export JAVA_HOME=\$$(/usr/libexec/java_home)" >> ~/.zprofile; \
-	  echo "✅ Added JAVA_HOME to ~/.zprofile"; \
+	  echo "    Added JAVA_HOME to ~/.zprofile"; \
 	fi
+	@echo "==> Activating git hooks"
 	$(MAKE) hooks
 	@echo ""
 	@echo "✅ Setup complete."
@@ -73,20 +75,25 @@ branch:
 # confirm with the user, update build.gradle, commit, tag, and push.
 # The release.yml CI workflow triggers on the pushed tag to publish all artefacts.
 release:
+	@echo "==> Analysing commits since last tag"
 	@bash scripts/release.sh
 
 all: build
 
 format:
+	@echo "==> Applying Spotless formatting"
 	$(GRADLEW) spotlessApply
 
 build: format
+	@echo "==> Running full build"
 	$(GRADLEW) build
 
 clean:
+	@echo "==> Cleaning build outputs"
 	$(GRADLEW) clean
 
 run:
+	@echo "==> Starting app"
 	@java -jar $$(find . -name "vanilla-*.jar") --spring.profiles.active=local
 
 test:
@@ -106,23 +113,28 @@ bdd:
 	$(GRADLEW) bddTest; EXIT=$$?; docker compose down; exit $$EXIT
 
 review:
+	@echo "==> Running local PR review"
 	@./scripts/pr-review.sh
 
 package:
+	@echo "==> Packaging application"
 	@./scripts/package.sh
 
 # Activate hooks and ensure all hook scripts are executable
 hooks:
+	@echo "==> Activating git hooks"
 	chmod +x .githooks/pre-commit .githooks/commit-msg .githooks/pre-push .githooks/post-commit .githooks/post-checkout
 	git config core.hooksPath .githooks
-	@echo "✅ Git hooks activated (pre-commit, commit-msg, pre-push, post-commit, post-checkout)"
+	@echo "    pre-commit, commit-msg, pre-push, post-commit, post-checkout"
 
 # Run OWASP dependency vulnerability scan (slow — downloads NVD data)
 audit:
+	@echo "==> Running OWASP dependency vulnerability scan"
 	$(GRADLEW) dependencyCheckAnalyze
 
 # Run PIT mutation testing (slow — reruns tests with code mutations)
 mutate:
+	@echo "==> Running PIT mutation tests"
 	$(GRADLEW) pitest
 
 # Deploy locally using Docker Compose.
@@ -132,10 +144,12 @@ mutate:
 # Ctrl+C to stop.
 deploy:
 	@if [ "$(VERSION)" = "local" ]; then \
-	    echo "Building JAR and Docker image..."; \
+	    echo "==> Building JAR and Docker image"; \
 	    $(GRADLEW) bootJar; \
+	    echo "==> Starting services (local build)"; \
 	    VANILLA_IMAGE=vanilla:local docker compose up --build --wait; \
 	  else \
+	    echo "==> Starting services (image: ghcr.io/bohemian/vanilla:$(VERSION))"; \
 	    VANILLA_IMAGE=ghcr.io/bohemian/vanilla:$(VERSION) docker compose up --no-build --wait; \
 	  fi
 	@echo ""
@@ -148,6 +162,7 @@ deploy:
 # Delete completed GitHub Actions runs older than KEEP_DAYS days (default: 1).
 # Use KEEP_DAYS=0 or KEEP_DAYS=NONE to delete all completed runs.
 clean-gh-runs:
+	@echo "==> Deleting completed GitHub Actions runs older than $(KEEP_DAYS) day(s)"
 	$(call ensure-brew,gh,gh)
 	$(call ensure-brew,jq,jq)
 	@days="$(KEEP_DAYS)"; \
