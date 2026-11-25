@@ -7,6 +7,13 @@ metadata:
   name: vanilla
 spec:
   replicas: 1
+  # maxSurge:1 / maxUnavailable:0 — one new pod is created and must be fully Ready
+  # (including the custom verified gate below) before any old pod is removed.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: vanilla
@@ -15,6 +22,12 @@ spec:
       labels:
         app: vanilla
     spec:
+      serviceAccountName: vanilla-deploy
+      # Kubernetes will not mark this Pod Ready until the pipeline sets
+      # deployment.example.com/verified=True via the k8s-verify.sh script.
+      # The normal application readiness probe must still pass independently.
+      readinessGates:
+        - conditionType: "deployment.example.com/verified"
       containers:
         - name: vanilla
           image: VANILLA_IMAGE

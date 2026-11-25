@@ -371,7 +371,7 @@ jobs:
 
       # Build into the local Docker daemon only — do not push yet.
       # The image must be local for Trivy to scan it without registry auth.
-      - name: Build Docker image
+      - name: Build app image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -381,6 +381,20 @@ jobs:
             ghcr.io/bohemian/vanilla:${{ steps.meta.outputs.version }}
             ghcr.io/bohemian/vanilla:sha-${{ steps.meta.outputs.sha }}
             ghcr.io/bohemian/vanilla:latest
+
+      # BDD runner image — used by k8s/verify-job.yaml.tpl to run the
+      # post-deploy verification suite against each new candidate pod.
+      - name: Build BDD runner image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.bdd
+          push: false
+          load: true
+          tags: |
+            ghcr.io/bohemian/vanilla-bdd:${{ steps.meta.outputs.version }}
+            ghcr.io/bohemian/vanilla-bdd:sha-${{ steps.meta.outputs.sha }}
+            ghcr.io/bohemian/vanilla-bdd:latest
 
       # Scan always passes — vulnerabilities are surfaced as a warning annotation
       # and visible in the job log, but do not block the publish.
@@ -403,11 +417,17 @@ jobs:
           fi
 
       # Only reached if the Trivy scan above passes.
-      - name: Push Docker image
+      - name: Push app image
         run: |
           docker push ghcr.io/bohemian/vanilla:${{ steps.meta.outputs.version }}
           docker push ghcr.io/bohemian/vanilla:sha-${{ steps.meta.outputs.sha }}
           docker push ghcr.io/bohemian/vanilla:latest
+
+      - name: Push BDD runner image
+        run: |
+          docker push ghcr.io/bohemian/vanilla-bdd:${{ steps.meta.outputs.version }}
+          docker push ghcr.io/bohemian/vanilla-bdd:sha-${{ steps.meta.outputs.sha }}
+          docker push ghcr.io/bohemian/vanilla-bdd:latest
 
       - name: Create GitHub release and attach OpenAPI spec
         env:

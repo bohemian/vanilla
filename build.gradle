@@ -349,6 +349,28 @@ tasks.register('bddTest', Test) {
     }
 }
 
+// Post-deploy verification — non-invasive read-only BDD stories run by k8s-verify.sh
+// inside a Kubernetes Job against a candidate pod before it receives production traffic.
+// Not wired into check; run explicitly: ./gradlew verifyTest [-PbddBaseUrl=http://...].
+tasks.register('verifyTest', Test) {
+    description = 'Non-invasive JBehave verification stories for the k8s post-deploy readiness gate.'
+    group = 'verification'
+    testClassesDirs = sourceSets.bdd.output.classesDirs
+    classpath = sourceSets.bdd.runtimeClasspath
+    useJUnitPlatform()
+    systemProperty 'bddBaseUrl', project.findProperty('bddBaseUrl') ?: 'http://localhost:8080'
+    jvmArgs '-Xmx256m', '-XX:MaxMetaspaceSize=256m'
+    // Run only VerificationStories — ProductCrudStories is invasive (creates/deletes products)
+    // and must not run against a pod being verified for production traffic.
+    filter {
+        includeTestsMatching 'vanilla.bdd.VerificationStories'
+    }
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        showStandardStreams = true
+    }
+}
+
 tasks.register('clientJar', Jar) {
     group = 'build'
     description = 'Packages the generated vanilla-client JAR for publishing to GitHub Packages.'

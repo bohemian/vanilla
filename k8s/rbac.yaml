@@ -1,0 +1,48 @@
+# RBAC for the deployment pipeline's post-deploy verification.
+#
+# vanilla-deploy ServiceAccount is used by:
+#   - The app Deployment's pods (serviceAccountName in app.yaml).
+#   - The verify Job's pods (serviceAccountName in verify-job.yaml.tpl).
+#
+# The Role grants the minimum permissions the k8s-verify.sh script needs:
+#   pods          get/list/watch — detect unverified pods during rolling update
+#   pods/status   patch          — set deployment.example.com/verified condition
+#   services      create/get/delete — manage per-pod candidate Service
+#   jobs          create/get/watch/delete — launch and monitor the BDD Job
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vanilla-deploy
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vanilla-deploy
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/status"]
+    verbs: ["patch"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["create", "get", "delete"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "watch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vanilla-deploy
+subjects:
+  - kind: ServiceAccount
+    name: vanilla-deploy
+roleRef:
+  kind: Role
+  name: vanilla-deploy
+  apiGroup: rbac.authorization.k8s.io

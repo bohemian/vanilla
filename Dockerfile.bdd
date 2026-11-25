@@ -1,0 +1,57 @@
+# BDD runner image for post-deploy verification.
+#
+# Built in CI by the publish job alongside the app image.
+# Pushed as ghcr.io/bohemian/vanilla-bdd:<tag>.
+# Used by k8s/verify-job.yaml.tpl to verify each new pod before it receives traffic.
+#
+# Build:
+#   docker build -f Dockerfile.bdd -t vanilla-bdd:local .
+#
+# Run (against a local app):
+#   docker run --rm -e BDD_BASE_URL=http://host.docker.internal:8080 vanilla-bdd:local
+
+# ── Stage 1: download dependencies and compile the bdd source set ─────────────
+FROM eclipse-temurin:25-jdk AS builder
+WORKDIR /workspace
+
+# Copy Gradle wrapper files first — these change rarely, so dependency
+# downloading is cached in a separate layer from source changes.
+COPY gradlew gradle.properties settings.gradle build.gradle ./
+COPY gradle/ gradle/
+RUN chmod +x gradlew && ./gradlew --version --no-daemon -q
+
+# Pre-download all bdd runtime dependencies.
+# This layer is rebuilt only when build.gradle changes.
+RUN ./gradlew --no-daemon dependencies --configuration bddRuntimeClasspath -q 2>&1 | tail -1
+
+# Copy BDD source and compile.
+COPY src/bdd/ src/bdd/
+RUN ./gradlew --no-daemon compileBddJava processBddResources -q
+
+# ── Stage 2: runtime image ─────────────────────────────────────────────────────
+# Full JDK (not JRE) is required: Gradle uses javac when resolving annotation
+# processors, even when the sources are already compiled.
+FROM eclipse-temurin:25-jdk
+WORKDIR /app
+
+# Copy the Gradle wrapper and build scripts.
+COPY --from=builder /workspace/gradlew /workspace/gradle.properties \
+                    /workspace/settings.gradle /workspace/build.gradle ./
+COPY --from=builder /workspace/gradle/ gradle/
+RUN chmod +x gradlew
+
+# Copy pre-compiled BDD classes and resources into the standard Gradle output
+# directories so that verifyTest sees them as UP-TO-DATE and skips recompilation.
+COPY --from=builder /workspace/src/bdd/ src/bdd/
+COPY --from=builder /workspace/build/classes/java/bdd/   build/classes/java/bdd/
+COPY --from=builder /workspace/build/resources/bdd/      build/resources/bdd/
+
+# Carry over the Gradle home/cache (pre-downloaded JARs) so verifyTest
+# resolves the classpath without network access inside the cluster.
+COPY --from=builder /root/.gradle /root/.gradle
+
+# BDD_BASE_URL is set by the Job template via -PbddBaseUrl.
+# Default points at localhost for local manual testing.
+ENV BDD_BASE_URL=http://localhost:8080
+
+ENTRYPOINT ["sh", "-c", "./gradlew --no-daemon verifyTest \"-PbddBaseUrl=${BDD_BASE_URL}\""]
