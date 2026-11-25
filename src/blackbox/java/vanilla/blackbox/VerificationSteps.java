@@ -1,4 +1,4 @@
-package vanilla.bdd;
+package vanilla.blackbox;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -20,7 +20,7 @@ import org.jbehave.core.annotations.When;
  */
 public class VerificationSteps {
 
-  private static final String BASE_URL = System.getProperty("bddBaseUrl", "http://localhost:8080");
+  private static final String BASE_URL = System.getProperty("baseUrl", "http://localhost:8080");
   private static final HttpClient HTTP = HttpClient.newHttpClient();
   private static final ObjectMapper MAPPER = new ObjectMapper();
 

@@ -118,7 +118,7 @@ blackbox:
 	VANILLA_IMAGE=vanilla:blackbox docker compose up --no-build --wait --wait-timeout 210 >/dev/null \
 	  || { echo "==> App failed to become healthy — container logs:"; docker compose logs app; docker compose down >/dev/null 2>&1; exit 1; }
 	@echo "==> Running black-box tests"
-	@$(GRADLEW) bddTest $(GRADLE_QUIET); EXIT=$$?; docker compose down -v >/dev/null 2>&1; exit $$EXIT
+	@$(GRADLEW) blackboxTest $(GRADLE_QUIET); EXIT=$$?; docker compose down -v >/dev/null 2>&1; exit $$EXIT
 
 review:
 	@echo "==> Running local PR review"

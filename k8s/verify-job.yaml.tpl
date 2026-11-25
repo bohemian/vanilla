@@ -3,10 +3,10 @@
 #
 # Variables substituted at runtime:
 #   POD_NAME  — name of the candidate pod being verified (e.g. vanilla-6d7b9f4c8-xk2vp)
-#   BDD_IMAGE — fully-qualified BDD runner image (e.g. ghcr.io/bohemian/vanilla-bdd:sha-abc123)
+#   BDD_IMAGE — fully-qualified blackbox runner image (e.g. ghcr.io/bohemian/vanilla-bdd:sha-abc123)
 #
 # The Job targets the per-pod candidate Service (vanilla-candidate-${POD_NAME}) which
-# selects only this pod and has publishNotReadyAddresses:true so the BDD runner can
+# selects only this pod and has publishNotReadyAddresses:true so the runner can
 # reach the pod before its readiness gate is satisfied.
 apiVersion: batch/v1
 kind: Job
@@ -29,13 +29,13 @@ spec:
           image: ${BDD_IMAGE}
           imagePullPolicy: IfNotPresent
           env:
-            - name: BDD_BASE_URL
+            - name: BASE_URL
               value: "http://vanilla-candidate-${POD_NAME}:8080"
           command:
             - ./gradlew
             - verifyTest
             - --no-daemon
-            - -PbddBaseUrl=http://vanilla-candidate-${POD_NAME}:8080
+            - -PbaseUrl=http://vanilla-candidate-${POD_NAME}:8080
           resources:
             requests:
               memory: 512Mi

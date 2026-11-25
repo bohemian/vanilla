@@ -4,14 +4,14 @@
 # For each new pod produced by a rolling update the script:
 #   1. Detects pods where ContainersReady=True but Ready=False (app is up, gate is pending).
 #   2. Creates a candidate Service targeting only that pod via its pod-template-hash label.
-#      publishNotReadyAddresses:true lets the BDD Job reach the pod before the gate is set.
-#   3. Launches a Kubernetes Job running the BDD verification suite against that Service.
+#      publishNotReadyAddresses:true lets the verification Job reach the pod before the gate is set.
+#   3. Launches a Kubernetes Job running the black-box verification suite against that Service.
 #   4. On Job success: patches the pod's status condition to True, unblocking the rollout.
 #      On Job failure: leaves the condition False, blocks the rollout, and exits non-zero.
 #   5. Cleans up the candidate Service and Job.
 #
 # Required env:
-#   BDD_IMAGE   — fully-qualified BDD runner image tag (e.g. ghcr.io/bohemian/vanilla-bdd:sha-abc)
+#   BDD_IMAGE   — fully-qualified blackbox runner image tag (e.g. ghcr.io/bohemian/vanilla-bdd:sha-abc)
 #
 # Optional env (with defaults):
 #   NAMESPACE   — Kubernetes namespace (default: default)
@@ -152,7 +152,7 @@ patch_verified_condition() {
     --arg now     "$now" \
     --arg message "$message" \
     '{type: $type, status: $status, lastTransitionTime: $now,
-      reason: "BDDVerification", message: $message}')
+      reason: "BlackboxVerification", message: $message}')
 
   local current_conditions
   current_conditions=$(kubectl get pod "$pod_name" -n "$NAMESPACE" \
@@ -195,7 +195,7 @@ cleanup() {
 # ---------------------------------------------------------------------------
 main() {
   log "Watching deployment/$DEPLOYMENT in namespace $NAMESPACE for unverified pods..."
-  log "BDD runner image: $BDD_IMAGE"
+  log "Blackbox runner image: $BDD_IMAGE"
 
   local deadline=$(( $(date +%s) + TIMEOUT ))
 
@@ -233,7 +233,7 @@ main() {
         patch_verified_condition "$POD" "False"
         cleanup "$POD"
         err "Pod $POD failed verification — rolling update is blocked."
-        err "Inspect the BDD report or re-run: kubectl logs -n $NAMESPACE -l target-pod=$POD"
+        err "Inspect the blackbox report or re-run: kubectl logs -n $NAMESPACE -l target-pod=$POD"
         exit 1
       fi
     done

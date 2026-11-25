@@ -167,7 +167,7 @@ jobs:
         with:
           files: build/reports/jacoco/test/jacocoTestReport.xml
 
-  bdd-test:
+  blackbox-test:
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name != 'schedule'
@@ -193,20 +193,20 @@ jobs:
           path: build/libs/
 
       - name: Build Docker image
-        run: docker build -t vanilla:bdd .
+        run: docker build -t vanilla:blackbox .
 
       - name: Start services
-        run: VANILLA_IMAGE=vanilla:bdd docker compose up --no-build --wait --wait-timeout 210
+        run: VANILLA_IMAGE=vanilla:blackbox docker compose up --no-build --wait --wait-timeout 210
 
-      - name: Run BDD tests
-        run: ./gradlew bddTest
+      - name: Run black-box tests
+        run: ./gradlew blackboxTest
 
-      - name: Upload BDD reports
+      - name: Upload black-box test reports
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: bdd-reports
-          path: build/reports/tests/bddTest/
+          name: blackbox-reports
+          path: build/reports/tests/blackboxTest/
           retention-days: 14
 
       - name: Tear down
@@ -309,7 +309,7 @@ jobs:
           echo "should_publish=$([ "$parents" -gt 1 ] && echo true || echo false)" >> $GITHUB_OUTPUT
 
   publish:
-    needs: [build, bdd-test, gate-publish]
+    needs: [build, blackbox-test, gate-publish]
     runs-on: ubuntu-latest
     # gate-publish is skipped on non-push events, which also skips this job automatically.
     if: needs.gate-publish.outputs.should_publish == 'true'

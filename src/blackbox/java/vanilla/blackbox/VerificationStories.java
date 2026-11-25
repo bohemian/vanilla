@@ -1,4 +1,4 @@
-package vanilla.bdd;
+package vanilla.blackbox;
 
 import java.util.List;
 import org.jbehave.core.configuration.Configuration;

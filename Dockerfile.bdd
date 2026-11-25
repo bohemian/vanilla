@@ -22,11 +22,11 @@ RUN chmod +x gradlew && ./gradlew --version --no-daemon -q
 
 # Pre-download all bdd runtime dependencies.
 # This layer is rebuilt only when build.gradle changes.
-RUN ./gradlew --no-daemon dependencies --configuration bddRuntimeClasspath -q 2>&1 | tail -1
+RUN ./gradlew --no-daemon dependencies --configuration blackboxRuntimeClasspath -q 2>&1 | tail -1
 
-# Copy BDD source and compile.
-COPY src/bdd/ src/bdd/
-RUN ./gradlew --no-daemon compileBddJava processBddResources -q
+# Copy blackbox source and compile.
+COPY src/blackbox/ src/blackbox/
+RUN ./gradlew --no-daemon compileBlackboxJava processBlackboxResources -q
 
 # ── Stage 2: runtime image ─────────────────────────────────────────────────────
 # Full JDK (not JRE) is required: Gradle uses javac when resolving annotation
@@ -40,18 +40,18 @@ COPY --from=builder /workspace/gradlew /workspace/gradle.properties \
 COPY --from=builder /workspace/gradle/ gradle/
 RUN chmod +x gradlew
 
-# Copy pre-compiled BDD classes and resources into the standard Gradle output
+# Copy pre-compiled blackbox classes and resources into the standard Gradle output
 # directories so that verifyTest sees them as UP-TO-DATE and skips recompilation.
-COPY --from=builder /workspace/src/bdd/ src/bdd/
-COPY --from=builder /workspace/build/classes/java/bdd/   build/classes/java/bdd/
-COPY --from=builder /workspace/build/resources/bdd/      build/resources/bdd/
+COPY --from=builder /workspace/src/blackbox/ src/blackbox/
+COPY --from=builder /workspace/build/classes/java/blackbox/   build/classes/java/blackbox/
+COPY --from=builder /workspace/build/resources/blackbox/      build/resources/blackbox/
 
 # Carry over the Gradle home/cache (pre-downloaded JARs) so verifyTest
 # resolves the classpath without network access inside the cluster.
 COPY --from=builder /root/.gradle /root/.gradle
 
-# BDD_BASE_URL is set by the Job template via -PbddBaseUrl.
+# BASE_URL is set by the Job template via -PbaseUrl.
 # Default points at localhost for local manual testing.
-ENV BDD_BASE_URL=http://localhost:8080
+ENV BASE_URL=http://localhost:8080
 
-ENTRYPOINT ["sh", "-c", "./gradlew --no-daemon verifyTest \"-PbddBaseUrl=${BDD_BASE_URL}\""]
+ENTRYPOINT ["sh", "-c", "./gradlew --no-daemon verifyTest \"-PbaseUrl=${BASE_URL}\""]
