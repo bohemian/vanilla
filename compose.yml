@@ -35,11 +35,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: vanilla
       # Text logging for local dev (JSON/ECS is used in k8s where log aggregators parse it).
       LOGGING_STRUCTURED_FORMAT_CONSOLE: ""
-      # JDWP remote debugging — suspend=n lets the server start without waiting for a debugger.
-      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
     ports:
       - "8080:8080"
-      - "5005:5005"
     depends_on:
       postgres:
         condition: service_healthy

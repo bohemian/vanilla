@@ -18,4 +18,10 @@ USER app
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-Xmx256m", "-XX:MaxMetaspaceSize=192m", "-jar", "app.jar"]
+ENTRYPOINT ["java", \
+  "-Xms32m", "-Xmx128m", \
+  "-XX:MaxMetaspaceSize=160m", \
+  "-XX:ReservedCodeCacheSize=64m", \
+  "-XX:+UseSerialGC", \
+  "-Xss512k", \
+  "-jar", "app.jar"]

@@ -155,15 +155,15 @@ deploy:
 	    echo "==> Building JAR and Docker image"; \
 	    $(GRADLEW) bootJar $(GRADLE_QUIET); \
 	    echo "==> Starting services (local build)"; \
-	    VANILLA_IMAGE=vanilla:local docker compose up --build --wait; \
+	    VANILLA_IMAGE=vanilla:local docker compose -f compose.yml -f compose.debug.yml up --build --wait; \
 	  else \
 	    echo "==> Starting services (image: ghcr.io/bohemian/vanilla:$(VERSION))"; \
-	    VANILLA_IMAGE=ghcr.io/bohemian/vanilla:$(VERSION) docker compose up --no-build --wait; \
+	    VANILLA_IMAGE=ghcr.io/bohemian/vanilla:$(VERSION) docker compose -f compose.yml -f compose.debug.yml up --no-build --wait; \
 	  fi
 	@echo ""
 	@echo "Postgres → localhost:5432  (user: vanilla  pass: vanilla  db: vanilla)"
 	@echo "App      → http://localhost:8080"
-	@echo "Debugger → localhost:5005  (attach remote JVM debugger, e.g. IntelliJ Run > Attach to Process)"
+	@echo "Debugger → localhost:5005  (JDWP — attach via IntelliJ Run > Attach to Process)"
 	@echo ""
 	@echo "Run 'docker compose down' to stop."
 
