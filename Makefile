@@ -9,7 +9,7 @@ GRADLE_QUIET = 2>&1 | grep -Ev "^To honour the JVM|^Daemon will be stopped|\[Inc
 KEEP_DAYS ?= 1
 VERSION ?= local
 
-.PHONY: all build clean run test bdd format review hooks audit mutate clean-gh-runs deploy setup branch release
+.PHONY: all build clean run test blackbox format review hooks audit mutate clean-gh-runs deploy setup branch release
 
 # Ensure a brew-installable tool is present; installs it automatically if missing.
 # Usage: $(call ensure-brew,executable,brew-package)
@@ -103,21 +103,21 @@ run:
 test:
 	@echo "==> Running unit tests"
 	@$(GRADLEW) test $(GRADLE_QUIET)
-	$(MAKE) bdd
+	$(MAKE) blackbox
 
-# Build the app, start it in Docker, run JBehave BDD tests, then tear down.
+# Build the app, start it in Docker, run black-box tests, then tear down.
 # Self-contained: no running app required beforehand.
-bdd:
+blackbox:
 	@echo "==> Tearing down any existing services"
 	docker compose down -v >/dev/null 2>&1; true
 	@echo "==> Building JAR"
 	@$(GRADLEW) bootJar $(GRADLE_QUIET)
 	@echo "==> Building Docker image"
-	docker build -t vanilla:bdd . -q
+	docker build -t vanilla:blackbox . -q
 	@echo "==> Starting services"
-	VANILLA_IMAGE=vanilla:bdd docker compose up --no-build --wait --wait-timeout 210 >/dev/null \
+	VANILLA_IMAGE=vanilla:blackbox docker compose up --no-build --wait --wait-timeout 210 >/dev/null \
 	  || { echo "==> App failed to become healthy — container logs:"; docker compose logs app; docker compose down >/dev/null 2>&1; exit 1; }
-	@echo "==> Running BDD tests"
+	@echo "==> Running black-box tests"
 	@$(GRADLEW) bddTest $(GRADLE_QUIET); EXIT=$$?; docker compose down -v >/dev/null 2>&1; exit $$EXIT
 
 review:
