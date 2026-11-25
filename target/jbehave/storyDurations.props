@@ -1,6 +1,0 @@
-#org.jbehave.core.embedder.StoryManager
-#Wed Nov 25 14:57:53 AEDT 2026
-total=3000
-threadAverage=3000
-stories/product_crud.story=3000
-threads=1

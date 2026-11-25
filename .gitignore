@@ -35,3 +35,6 @@ gradle-app.setting
 *.iws
 
 
+
+/target/
+/META-INF/
