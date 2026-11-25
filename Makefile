@@ -109,16 +109,16 @@ test:
 # Self-contained: no running app required beforehand.
 bdd:
 	@echo "==> Tearing down any existing services"
-	docker compose down >/dev/null 2>&1; true
+	docker compose down -v >/dev/null 2>&1; true
 	@echo "==> Building JAR"
 	@$(GRADLEW) bootJar $(GRADLE_QUIET)
 	@echo "==> Building Docker image"
 	docker build -t vanilla:bdd . -q
 	@echo "==> Starting services"
-	VANILLA_IMAGE=vanilla:bdd docker compose up --no-build --wait --wait-timeout 180 >/dev/null \
+	VANILLA_IMAGE=vanilla:bdd docker compose up --no-build --wait --wait-timeout 210 >/dev/null \
 	  || { echo "==> App failed to become healthy — container logs:"; docker compose logs app; docker compose down >/dev/null 2>&1; exit 1; }
 	@echo "==> Running BDD tests"
-	@$(GRADLEW) bddTest $(GRADLE_QUIET); EXIT=$$?; docker compose down >/dev/null 2>&1; exit $$EXIT
+	@$(GRADLEW) bddTest $(GRADLE_QUIET); EXIT=$$?; docker compose down -v >/dev/null 2>&1; exit $$EXIT
 
 review:
 	@echo "==> Running local PR review"

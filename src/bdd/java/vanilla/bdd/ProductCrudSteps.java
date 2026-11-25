@@ -108,7 +108,7 @@ public class ProductCrudSteps {
   @Then("the response status is $status")
   public void responseStatusIs(int status) {
     assertNotNull(lastResponse, "No HTTP response recorded — missing @When step before this @Then");
-    assertEquals(status, lastResponse.statusCode());
+    assertEquals(status, lastResponse.statusCode(), "Response body: " + lastResponse.body());
   }
 
   @Then("the response contains a product with code $code")

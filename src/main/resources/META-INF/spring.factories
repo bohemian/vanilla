@@ -1,0 +1,5 @@
+# Registers Flyway as a database initializer so the JPA/Hibernate SPI (JpaDependsOnDatabaseInitializationDetector)
+# automatically makes EntityManagerFactory depend on the Flyway bean.
+# Required because Spring Boot 4.x no longer ships FlywayAutoConfiguration.
+org.springframework.boot.sql.init.dependency.DatabaseInitializerDetector=\
+vanilla.config.FlywayDatabaseInitializerDetector
