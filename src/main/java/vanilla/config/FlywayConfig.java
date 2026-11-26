@@ -14,7 +14,13 @@ public class FlywayConfig {
   @Bean
   public Flyway flyway(DataSource dataSource) {
     Flyway flyway =
-        Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").load();
+        Flyway.configure()
+            .dataSource(dataSource)
+            .locations("classpath:db/migration")
+            // All pending migrations run in a single JDBC transaction: all succeed or all
+            // roll back. PostgreSQL supports transactional DDL so this gives true atomicity.
+            .group(true)
+            .load();
     flyway.migrate();
     return flyway;
   }

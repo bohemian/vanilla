@@ -1,0 +1,15 @@
+# Spring profile used by the k8s pre-deploy migration Job (k8s/migrate-job.yaml.tpl).
+#
+# With no web server, Spring Boot starts, FlywayConfig runs all pending migrations inside
+# a single JDBC transaction (group=true in FlywayConfig), then the process exits with
+# code 0 on success or non-zero on failure.  The k8s Job's backoffLimit:0 ensures a
+# failed migration aborts the deploy immediately — no partial state, no new code deployed.
+#
+# Roll-forward policy: a successful migration that later proves harmful is fixed by a
+# new forward migration, never by reverting to a previous schema version.
+spring:
+  main:
+    web-application-type: none
+  jpa:
+    hibernate:
+      ddl-auto: none

@@ -19,4 +19,4 @@
 - [ ] No new SpotBugs / PMD warnings introduced
 - [ ] Tests pass (`./gradlew test`)
 - [ ] API changes are reflected in OpenAPI (Springdoc auto-generates from annotations)
-- [ ] DB migrations are backward-compatible (old app can still run against new schema)
+- [ ] New migrations are additive-only (migrate Job runs before new pods; old pods serve traffic against new schema during rollout)

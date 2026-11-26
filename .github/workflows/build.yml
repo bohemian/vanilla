@@ -70,41 +70,6 @@ jobs:
       - name: Coverage gate
         run: ./gradlew jacocoTestCoverageVerification
 
-      # Only runs when this PR adds new migration files. Caps Flyway at the highest version
-      # present on the base branch, starts the app, and verifies basic requests succeed.
-      # A passing run auto-ticks the "DB migrations are backward-compatible" checklist item.
-      - name: DB migration backward-compat test
-        if: github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git fetch origin ${{ github.base_ref }} --depth=1
-          # Two-dot (..) diffs the two tree states directly — no merge base needed,
-          # so this works with shallow clones. Three-dot (...) requires a common
-          # ancestor which shallow history cannot provide.
-          NEW_MIGRATIONS=$(git diff origin/${{ github.base_ref }}..HEAD \
-            --name-only --diff-filter=A -- 'src/main/resources/db/migration/*.sql')
-          if [ -z "$NEW_MIGRATIONS" ]; then
-            echo "No new migrations in this PR — skipping backward-compat test"
-            exit 0
-          fi
-          PREV_VERSION=$(git ls-tree -r origin/${{ github.base_ref }} --name-only \
-            -- src/main/resources/db/migration/ \
-            | grep -oP '(?<=V)\d+(?=__)' | sort -n | tail -1)
-          if [ -z "$PREV_VERSION" ]; then
-            echo "No existing migrations on base branch — skipping"
-            exit 0
-          fi
-          echo "Testing app against schema V${PREV_VERSION} (before new migrations in this PR)"
-          ./gradlew migrationCompatTest -PflywayTarget=${PREV_VERSION}
-          python3 - <<'PYEOF'
-          import subprocess, json, re
-          pr = '${{ github.event.pull_request.number }}'
-          body = json.loads(subprocess.check_output(['gh', 'pr', 'view', pr, '--json', 'body']))['body'] or ''
-          body = re.sub(r'- \[ \] (DB migrations are backward)', r'- [x] \1', body)
-          subprocess.run(['gh', 'pr', 'edit', pr, '--body', body], check=True)
-          PYEOF
-
       # Runs after coverage so a contract failure does not block the coverage gate.
       # Spring Cloud Contract 4.x is incompatible with Spring Framework 7 (Spring Boot 4.x):
       # all three test modes (MOCKMVC/EXPLICIT/WEBTESTCLIENT) hit different API breaks in SFW7.
