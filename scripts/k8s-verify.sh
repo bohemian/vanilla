@@ -11,7 +11,7 @@
 #   5. Cleans up the candidate Service and Job.
 #
 # Required env:
-#   BDD_IMAGE   — fully-qualified blackbox runner image tag (e.g. ghcr.io/bohemian/vanilla-bdd:sha-abc)
+#   BB_IMAGE   — fully-qualified blackbox runner image tag (e.g. ghcr.io/bohemian/vanilla-bb:sha-abc)
 #
 # Optional env (with defaults):
 #   NAMESPACE   — Kubernetes namespace (default: default)
@@ -23,7 +23,7 @@ set -euo pipefail
 NAMESPACE="${NAMESPACE:-default}"
 DEPLOYMENT="${DEPLOYMENT:-vanilla}"
 TIMEOUT="${TIMEOUT:-300}"
-BDD_IMAGE="${BDD_IMAGE:?BDD_IMAGE must be set}"
+BB_IMAGE="${BB_IMAGE:?BB_IMAGE must be set}"
 CONDITION_TYPE="deployment.example.com/verified"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 JOB_TEMPLATE="${SCRIPT_DIR}/../k8s/verify-job.yaml.tpl"
@@ -102,8 +102,8 @@ run_verify_job() {
 
   # Substitute only our two variables; leave any other $ expressions intact.
   export POD_NAME="$pod_name"
-  export BDD_IMAGE
-  envsubst '${POD_NAME} ${BDD_IMAGE}' < "$JOB_TEMPLATE" \
+  export BB_IMAGE
+  envsubst '${POD_NAME} ${BB_IMAGE}' < "$JOB_TEMPLATE" \
     | kubectl apply -n "$NAMESPACE" -f -
   log "Launched Job $job_name"
 
@@ -195,7 +195,7 @@ cleanup() {
 # ---------------------------------------------------------------------------
 main() {
   log "Watching deployment/$DEPLOYMENT in namespace $NAMESPACE for unverified pods..."
-  log "Blackbox runner image: $BDD_IMAGE"
+  log "Blackbox runner image: $BB_IMAGE"
 
   local deadline=$(( $(date +%s) + TIMEOUT ))
 

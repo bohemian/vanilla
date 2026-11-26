@@ -1,16 +1,16 @@
-# BDD runner image for post-deploy verification.
+# BB (black-box) runner image for post-deploy verification.
 #
 # Built in CI by the publish job alongside the app image.
-# Pushed as ghcr.io/bohemian/vanilla-bdd:<tag>.
+# Pushed as ghcr.io/bohemian/vanilla-bb:<tag>.
 # Used by k8s/verify-job.yaml.tpl to verify each new pod before it receives traffic.
 #
 # Build:
-#   docker build -f Dockerfile.bdd -t vanilla-bdd:local .
+#   docker build -f Dockerfile.bb -t vanilla-bb:local .
 #
 # Run (against a local app):
-#   docker run --rm -e BDD_BASE_URL=http://host.docker.internal:8080 vanilla-bdd:local
+#   docker run --rm -e BASE_URL=http://host.docker.internal:8080 vanilla-bb:local
 
-# ── Stage 1: download dependencies and compile the bdd source set ─────────────
+# ── Stage 1: download dependencies and compile the blackbox source set ─────────
 FROM eclipse-temurin:25-jdk AS builder
 WORKDIR /workspace
 
@@ -20,7 +20,7 @@ COPY gradlew gradle.properties settings.gradle build.gradle ./
 COPY gradle/ gradle/
 RUN chmod +x gradlew && ./gradlew --version --no-daemon -q
 
-# Pre-download all bdd runtime dependencies.
+# Pre-download all blackbox runtime dependencies.
 # This layer is rebuilt only when build.gradle changes.
 RUN ./gradlew --no-daemon dependencies --configuration blackboxRuntimeClasspath -q 2>&1 | tail -1
 

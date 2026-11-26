@@ -382,19 +382,19 @@ jobs:
             ghcr.io/bohemian/vanilla:sha-${{ steps.meta.outputs.sha }}
             ghcr.io/bohemian/vanilla:latest
 
-      # BDD runner image — used by k8s/verify-job.yaml.tpl to run the
+      # BB runner image — used by k8s/verify-job.yaml.tpl to run the
       # post-deploy verification suite against each new candidate pod.
-      - name: Build BDD runner image
+      - name: Build BB runner image
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile.bdd
+          file: Dockerfile.bb
           push: false
           load: true
           tags: |
-            ghcr.io/bohemian/vanilla-bdd:${{ steps.meta.outputs.version }}
-            ghcr.io/bohemian/vanilla-bdd:sha-${{ steps.meta.outputs.sha }}
-            ghcr.io/bohemian/vanilla-bdd:latest
+            ghcr.io/bohemian/vanilla-bb:${{ steps.meta.outputs.version }}
+            ghcr.io/bohemian/vanilla-bb:sha-${{ steps.meta.outputs.sha }}
+            ghcr.io/bohemian/vanilla-bb:latest
 
       # Scan always passes — vulnerabilities are surfaced as a warning annotation
       # and visible in the job log, but do not block the publish.
@@ -423,11 +423,11 @@ jobs:
           docker push ghcr.io/bohemian/vanilla:sha-${{ steps.meta.outputs.sha }}
           docker push ghcr.io/bohemian/vanilla:latest
 
-      - name: Push BDD runner image
+      - name: Push BB runner image
         run: |
-          docker push ghcr.io/bohemian/vanilla-bdd:${{ steps.meta.outputs.version }}
-          docker push ghcr.io/bohemian/vanilla-bdd:sha-${{ steps.meta.outputs.sha }}
-          docker push ghcr.io/bohemian/vanilla-bdd:latest
+          docker push ghcr.io/bohemian/vanilla-bb:${{ steps.meta.outputs.version }}
+          docker push ghcr.io/bohemian/vanilla-bb:sha-${{ steps.meta.outputs.sha }}
+          docker push ghcr.io/bohemian/vanilla-bb:latest
 
       - name: Create GitHub release and attach OpenAPI spec
         env:

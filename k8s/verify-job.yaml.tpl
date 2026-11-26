@@ -1,9 +1,9 @@
 # Template for the per-pod JBehave verification Job.
-# Processed by scripts/k8s-verify.sh using: envsubst '${POD_NAME} ${BDD_IMAGE}'
+# Processed by scripts/k8s-verify.sh using: envsubst '${POD_NAME} ${BB_IMAGE}'
 #
 # Variables substituted at runtime:
 #   POD_NAME  — name of the candidate pod being verified (e.g. vanilla-6d7b9f4c8-xk2vp)
-#   BDD_IMAGE — fully-qualified blackbox runner image (e.g. ghcr.io/bohemian/vanilla-bdd:sha-abc123)
+#   BB_IMAGE — fully-qualified BB runner image (e.g. ghcr.io/bohemian/vanilla-bb:sha-abc123)
 #
 # The Job targets the per-pod candidate Service (vanilla-candidate-${POD_NAME}) which
 # selects only this pod and has publishNotReadyAddresses:true so the runner can
@@ -25,8 +25,8 @@ spec:
       restartPolicy: Never
       serviceAccountName: vanilla-deploy
       containers:
-        - name: bdd-runner
-          image: ${BDD_IMAGE}
+        - name: bb-runner
+          image: ${BB_IMAGE}
           imagePullPolicy: IfNotPresent
           env:
             - name: BASE_URL

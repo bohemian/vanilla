@@ -8,7 +8,7 @@
 #   pods          get/list/watch — detect unverified pods during rolling update
 #   pods/status   patch          — set deployment.example.com/verified condition
 #   services      create/get/delete — manage per-pod candidate Service
-#   jobs          create/get/watch/delete — launch and monitor the BDD Job
+#   jobs          create/get/watch/delete — launch and monitor the BB verification Job
 apiVersion: v1
 kind: ServiceAccount
 metadata:

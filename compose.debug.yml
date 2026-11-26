@@ -1,6 +1,6 @@
 # Debug overlay for local development. Merged by: make deploy
 # Adds JDWP remote debugging on localhost:5005.
-# Not used for BDD tests or CI — keeps the base image lean.
+# Not used for black-box tests or CI — keeps the base image lean.
 services:
   app:
     environment:
