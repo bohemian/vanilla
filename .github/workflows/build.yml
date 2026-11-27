@@ -179,12 +179,10 @@ jobs:
         run: docker compose down
 
   migration-forward-compat:
-    # Verifies that the CURRENT production code (base branch) can run against the NEW schema
+    # Verifies that the main branch code (current production) can run against the new schema
     # produced by this PR's migrations.  This covers the rolling-update window where old pods
-    # are serving traffic while the migrate Job has already committed the new schema.
-    #
-    # Only runs when the PR adds new migration files; skips gracefully when no published
-    # image exists yet (first-ever deploy).
+    # are serving traffic after the migrate Job has committed the new schema.
+    # Runs scripts/check-migration-compat.sh — the same script developers run locally.
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
@@ -215,83 +213,27 @@ jobs:
           distribution: temurin
           java-version: '25'
 
+      - name: Set up Gradle
+        if: steps.check.outputs.found == 'true'
+        uses: gradle/actions/setup-gradle@v5
+
       - name: Grant execute permission
         if: steps.check.outputs.found == 'true'
         run: chmod +x gradlew
 
-      - name: Download pre-built JAR
+      - name: Download pre-built PR JAR
         if: steps.check.outputs.found == 'true'
         uses: actions/download-artifact@v5
         with:
           name: application-jar
           path: build/libs/
 
-      - name: Start postgres
+      - name: Run migration forward-compat check
         if: steps.check.outputs.found == 'true'
-        run: docker compose up postgres --wait
-
-      - name: Apply new migrations using PR code
-        if: steps.check.outputs.found == 'true'
-        run: |
-          # Run the PR's JAR with the migrate profile: Spring starts, Flyway commits all
-          # pending migrations in a single transaction, process exits.
-          java -jar $(find build/libs -name "vanilla-*.jar" | head -1) \
-            --spring.profiles.active=migrate \
-            --spring.datasource.url=jdbc:postgresql://localhost:5432/vanilla \
-            --spring.datasource.username=vanilla \
-            --spring.datasource.password=vanilla
-
-      - name: Log in to GitHub Container Registry
-        if: steps.check.outputs.found == 'true'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Check base branch image exists on GHCR
-        if: steps.check.outputs.found == 'true'
-        id: image
-        run: |
-          if docker pull ghcr.io/bohemian/vanilla:latest 2>/dev/null; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "No published image found (first deploy?) — skipping old-code check"
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Start base branch app against new schema
-        # --network host: app container reaches postgres on localhost:5432 (port-mapped above).
-        # SPRING_FLYWAY_ENABLED=false: schema is already migrated; prevent Flyway in the old
-        # app from failing on unknown migration versions it doesn't have scripts for.
-        if: steps.check.outputs.found == 'true' && steps.image.outputs.exists == 'true'
-        run: |
-          docker run -d --name old-app --network host \
-            -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/vanilla \
-            -e SPRING_DATASOURCE_USERNAME=vanilla \
-            -e SPRING_DATASOURCE_PASSWORD=vanilla \
-            -e SPRING_FLYWAY_ENABLED=false \
-            ghcr.io/bohemian/vanilla:latest
-          for i in $(seq 1 24); do
-            curl -sf http://localhost:8080/actuator/health/readiness && break
-            [ "$i" -eq 24 ] && { echo "Timed out waiting for old app to become ready"; exit 1; }
-            sleep 5
-          done
-
-      - name: Verify old app handles new schema
-        if: steps.check.outputs.found == 'true' && steps.image.outputs.exists == 'true'
-        run: |
-          curl -sf http://localhost:8080/actuator/health/liveness
-          curl -sf http://localhost:8080/actuator/health/readiness
-          # Basic read queries — 200 (data exists) or 404 (no data) are both acceptable;
-          # a 500 would indicate a schema error (missing column, type mismatch, etc.)
-          STATUS=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:8080/products?maxPriceCents=10000")
-          [ "$STATUS" = "200" ] || { echo "GET /products returned $STATUS"; exit 1; }
-          STATUS=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:8080/products/HEALTH")
-          [[ "$STATUS" =~ ^(200|404)$ ]] || { echo "GET /products/HEALTH returned $STATUS"; exit 1; }
+        run: scripts/check-migration-compat.sh
 
       - name: Tick checklist item on success
-        if: steps.check.outputs.found == 'true' && steps.image.outputs.exists == 'true'
+        if: steps.check.outputs.found == 'true'
         run: |
           python3 - <<'PYEOF'
           import subprocess, json, re
@@ -300,12 +242,6 @@ jobs:
           body = re.sub(r'- \[ \] (New migrations are additive-only)', r'- [x] \1', body)
           subprocess.run(['gh', 'pr', 'edit', pr, '--body', body], check=True)
           PYEOF
-
-      - name: Tear down
-        if: always() && steps.check.outputs.found == 'true'
-        run: |
-          docker rm -f old-app 2>/dev/null || true
-          docker compose down -v
 
   describe-pr:
     runs-on: ubuntu-latest
