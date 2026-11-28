@@ -8,4 +8,12 @@
     <Match>
         <Bug pattern="UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD"/>
     </Match>
+
+    <!-- Find-Sec-Bugs: SPRING_ENDPOINT marks every @GetMapping/@PostMapping etc. method as an
+         "HTTP endpoint exposed to the web" — it is purely documentary, not a vulnerability
+         signal.  All endpoints in this service are intentionally public; authentication and
+         authorisation are enforced by the Istio sidecar at the mesh layer (see SecurityConfig). -->
+    <Match>
+        <Bug pattern="SPRING_ENDPOINT"/>
+    </Match>
 </FindBugsFilter>

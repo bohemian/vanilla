@@ -227,6 +227,11 @@ jar {
 }
 
 dependencies {
+    // Find-Sec-Bugs extends SpotBugs with ~100 security-specific detectors covering
+    // injection flaws, weak cryptography, XXE, path traversal, and more.
+    // No code changes required — SpotBugs picks it up automatically at analysis time.
+    spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.13.0'
+
     // JBehave black-box tests — run against a live app outside the check lifecycle.
     // JBehave 5.0 is JUnit 5-native (JupiterStories); no JUnit 4 / vintage engine needed.
     blackboxImplementation "org.jbehave:jbehave-core:$jbehaveVersion"

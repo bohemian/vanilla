@@ -61,7 +61,8 @@ jobs:
 
       # Static analysis runs before tests: SpotBugs/PMD operate on compiled bytecode and
       # complete in seconds, giving fast feedback on potential bugs before the slower test suite.
-      - name: Static analysis (SpotBugs + PMD)
+      # Find-Sec-Bugs runs as a SpotBugs plugin — no separate step needed.
+      - name: Static analysis (SpotBugs + Find-Sec-Bugs + PMD)
         run: ./gradlew spotbugsMain pmdMain
 
       - name: Test
